@@ -1,0 +1,16 @@
+version: '3.8'
+
+services:
+  postgre:
+    image: pgvector/pgvector:pg17
+    container_name: postgresql
+    env_file: ./backend/autoclean/.env
+    volumes:
+      - ./postgre/data:/var/lib/postgresql/data
+    ports:
+      - 5432:5432
+    networks:
+      - network1
+
+networks:
+  network1:
