@@ -24,7 +24,7 @@ load_dotenv(dotenv_path=env_path)
 # See https://docs.djangoproject.com/en/5.1/howto/deployment/checklist/
 
 # SECURITY WARNING: keep the secret key used in production secret!
-SECRET_KEY = "django-insecure-k%6g&zrmq8*k&$0zaga=okin2=*zfz*_*l1i%#l13%+%0xc#u-"
+SECRET_KEY = os.getenv('SECRET_KEY')
 
 # SECURITY WARNING: don't run with debug turned on in production!
 DEBUG = True
@@ -42,6 +42,7 @@ INSTALLED_APPS = [
     "django.contrib.messages",
     "django.contrib.staticfiles",
     "corsheaders",
+    "django_extensions",
 ]
 
 MIDDLEWARE = [
@@ -82,11 +83,11 @@ WSGI_APPLICATION = "autoclean.wsgi.application"
 DATABASES = {
     'default': {
         'ENGINE': 'django.db.backends.postgresql',
-        'NAME': os.getenv('DB_NAME'),         # Fetch from .env
-        'USER': os.getenv('DB_USER'),         # Fetch from .env
-        'PASSWORD': os.getenv('DB_PASSWORD'), # Fetch from .env
-        'HOST': os.getenv('DB_HOST'),         # Fetch from .env
-        'PORT': os.getenv('DB_PORT'), # Fetch from .env, cast to int
+        'NAME': os.getenv('DB_NAME'),
+        'USER': os.getenv('DB_USER'),
+        'PASSWORD': os.getenv('DB_PASSWORD'),
+        'HOST': os.getenv('DB_HOST'),
+        'PORT': os.getenv('DB_PORT'),
     }
 }
 
