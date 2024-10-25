@@ -118,5 +118,6 @@ Procfile
 .cache/
 
 # Celery related files
+celerybeat-schedule
 celerybeat-schedule.db
 celerybeat.pid
