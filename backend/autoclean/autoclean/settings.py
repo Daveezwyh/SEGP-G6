@@ -47,6 +47,7 @@ INSTALLED_APPS = [
     "rest_framework",
     "drf_spectacular",
     "autoclean",
+    "api",
 ]
 
 MIDDLEWARE = [
@@ -200,3 +201,9 @@ LOGGING = {
         },
     },
 }
+
+CELERY_BROKER_URL = os.getenv('CELERY_BROKER_URL')
+CELERY_RESULT_BACKEND = os.getenv('CELERY_RESULT_BACKEND')
+CELERY_BROKER_CONNECTION_RETRY_ON_STARTUP = True
+
+# celery -A autoclean worker -B -l info

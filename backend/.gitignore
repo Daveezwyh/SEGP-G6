@@ -116,3 +116,7 @@ Procfile
 # Cache
 *.cache
 .cache/
+
+# Celery related files
+celerybeat-schedule.db
+celerybeat.pid
