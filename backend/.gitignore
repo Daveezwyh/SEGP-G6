@@ -100,10 +100,6 @@ test_results/
 # Bandit (security linting)
 .bandit/
 
-# Docker
-docker-compose*.yml
-Dockerfile
-
 # Heroku
 Procfile
 
