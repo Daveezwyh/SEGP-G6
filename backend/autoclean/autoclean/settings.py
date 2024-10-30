@@ -48,6 +48,7 @@ INSTALLED_APPS = [
     "drf_spectacular",
     "autoclean",
     "api",
+    "storages",
 ]
 
 MIDDLEWARE = [
@@ -207,3 +208,7 @@ CELERY_RESULT_BACKEND = os.getenv('CELERY_RESULT_BACKEND')
 CELERY_BROKER_CONNECTION_RETRY_ON_STARTUP = True
 
 # celery -A autoclean worker -B -l info
+
+DEFAULT_FILE_STORAGE = 'django.core.files.storage.FileSystemStorage'
+MEDIA_URL = '/uploads/'
+MEDIA_ROOT = os.path.join(BASE_DIR, 'uploads')
