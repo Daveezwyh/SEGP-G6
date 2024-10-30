@@ -117,3 +117,6 @@ Procfile
 celerybeat-schedule
 celerybeat-schedule.db
 celerybeat.pid
+
+logs/
+uploads/
