@@ -28,4 +28,18 @@ class ImportSerializer(serializers.ModelSerializer):
         if file.size > max_file_size:
             raise serializers.ValidationError({"file": f"File size must not exceed {max_file_size_MB} MB."})
         
+        if file.content_type not in Import.ALLOWED_CONTENT_TYPES:
+            raise serializers.ValidationError({"file": "Only CSV or Excel files are allowed."})
+        
         return attrs
+    
+    def to_representation(self, instance):
+        representation = super().to_representation(instance)
+        
+        filename = instance.data.get('filename') if instance.data else None
+        
+        return {
+            "id": representation["id"],
+            "description": representation["description"],
+            "filename": filename
+        }

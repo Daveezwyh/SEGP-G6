@@ -7,6 +7,7 @@ from django.views.decorators.http import require_POST
 
 from .serializers import UserSerializer
 from .serializers import ImportSerializer
+from .tasks import read_file_to_import_data
 
 class UserViewSet(viewsets.ModelViewSet):
     queryset = User.objects.exclude(is_superuser=True)
@@ -29,6 +30,8 @@ class ImportUploadView(APIView):
                 "filename": uploaded_file.name
             }
             Import.save()
+
+            read_file_to_import_data.delay(Import.id)
 
             return Response(serializer.data, status=status.HTTP_201_CREATED)
         
