@@ -1,3 +1,14 @@
+def find_missing_values(df):
+    """
+    Find all rows with missing values in the DataFrame.
+    
+    :param df: Input DataFrame
+    :return: DataFrame with only rows that contain missing values
+    """
+    df_with_missing = df[df.isnull().any(axis=1)]
+    
+    return df_with_missing
+
 def fill_missing_with_mean(df, column):
     """
     Fill missing values in a column with the mean of that column.

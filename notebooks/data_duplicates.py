@@ -1,15 +1,11 @@
-def remove_duplicates(df):
+def find_duplicates(df):
     """
-    Remove rows that are completely identical (i.e., all columns are the same).
+    Find rows that are completely identical (i.e., all columns are the same).
     
     :param df: Input dataframe
-    :return: Dataframe with duplicate rows removed
+    :return: Dataframe with only duplicate rows
     """
-    # Use drop_duplicates() to remove duplicate rows based on all columns
-    df_no_duplicates = df.drop_duplicates(keep='first')
+    # Use duplicated() with keep=False to identify all duplicated rows
+    df_duplicates = df[df.duplicated(keep=False)]
     
-    return df_no_duplicates
-
-# # Example usage
-# df_clean = remove_duplicates(df)
-# print(df_clean)
+    return df_duplicates
