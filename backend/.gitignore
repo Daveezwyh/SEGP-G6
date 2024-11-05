@@ -50,9 +50,6 @@ staticfiles/
 static/
 live/
 
-# Migrations
-migrations/
-
 # PyCharm specific
 .idea/
 
