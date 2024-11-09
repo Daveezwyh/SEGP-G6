@@ -1,6 +1,7 @@
 from django.contrib.auth.models import User
 from rest_framework import serializers
-from .models import Import
+
+from .models import Import, ImportData
 
 class UserSerializer(serializers.ModelSerializer):
     password = serializers.CharField(write_only=True)
@@ -10,7 +11,7 @@ class UserSerializer(serializers.ModelSerializer):
         fields = '__all__'
         read_only_fields = ('is_staff', 'is_superuser')
 
-class ImportSerializer(serializers.ModelSerializer):
+class UploadImportSerializer(serializers.ModelSerializer):
     uploaded_by = serializers.PrimaryKeyRelatedField(read_only=True)
 
     class Meta:
@@ -43,3 +44,20 @@ class ImportSerializer(serializers.ModelSerializer):
             "description": representation["description"],
             "filename": filename
         }
+
+class ImportSerializer(serializers.ModelSerializer):
+    uploaded_by = serializers.SerializerMethodField()
+    file = serializers.CharField(write_only=True)
+
+    class Meta:
+        model = Import
+        fields = ['id', 'description', 'data', 'uploaded_at', 'uploaded_by', 'file']
+        read_only_fields = ['uploaded_at', 'uploaded_by', 'data']
+    
+    def get_uploaded_by(self, obj) -> str:
+        return obj.uploaded_by.username if obj.uploaded_by else None
+
+class ImportDataSerializer(serializers.ModelSerializer):
+    class Meta:
+        model = ImportData
+        fields = ['id', 'data', 'created_at']
