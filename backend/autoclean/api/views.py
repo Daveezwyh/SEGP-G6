@@ -1,21 +1,20 @@
 from django.contrib.auth.models import User
-from django.views.decorators.http import require_POST
 from rest_framework import viewsets, status, generics
 from rest_framework.response import Response
 from rest_framework.views import APIView
 from rest_framework.permissions import IsAuthenticated
 from rest_framework.decorators import action
-from rest_framework.pagination import PageNumberPagination
 from rest_framework.exceptions import NotFound
 from celery import chain
 from drf_spectacular.utils import extend_schema, OpenApiParameter
 
 from .serializers import (
-    UserSerializer, UploadImportSerializer, ImportSerializer, ImportDataSerializer,
+    UserSerializer, UploadImportSerializer, ImportSerializer, ImportDataSerializer, ImportScanResultSerializer,
     TaskProgressSerializer
 )
 from .tasks import read_file_to_import_data, scan_import
-from .models import TaskProgress, Import, ImportData
+from .models import TaskProgress, Import, ImportData, ImportScanResult
+from autoclean.utils import AutocleanAPIPagination
 
 class UserViewSet(viewsets.ModelViewSet):
     queryset = User.objects.exclude(is_superuser=True)
@@ -80,11 +79,6 @@ class ImportUploadView(APIView):
         
         return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
 
-class ImportDataPagination(PageNumberPagination):
-    page_size = 10
-    page_size_query_param = 'page_size'
-    max_page_size = 100
-
 class ImportViewSet(viewsets.ReadOnlyModelViewSet):
     queryset = Import.objects
     serializer_class = ImportSerializer
@@ -102,11 +96,19 @@ class ImportViewSet(viewsets.ReadOnlyModelViewSet):
         import_instance = self.get_object()
         import_data = ImportData.objects.filter(import_model=import_instance).order_by('id')
 
-        paginator = ImportDataPagination()
+        paginator = AutocleanAPIPagination()
         page = paginator.paginate_queryset(import_data, request)
         if page is not None:
             serializer = ImportDataSerializer(page, many=True)
             return paginator.get_paginated_response(serializer.data)
         
         serializer = ImportDataSerializer(import_data, many=True)
+        return Response(serializer.data)
+    
+    @action(detail=True, methods=['get'], url_path='scan-results')
+    def scan_results(self, request, pk=None):
+        import_instance = self.get_object()
+        import_scan_results = ImportScanResult.objects.filter(import_model=import_instance)
+
+        serializer = ImportScanResultSerializer(import_scan_results, many=True)
         return Response(serializer.data)

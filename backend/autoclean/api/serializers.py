@@ -1,7 +1,7 @@
 from django.contrib.auth.models import User
 from rest_framework import serializers
 
-from .models import Import, ImportData, TaskProgress
+from .models import Import, ImportData, ImportScanResult, TaskProgress
 
 class UserSerializer(serializers.ModelSerializer):
     password = serializers.CharField(write_only=True)
@@ -66,3 +66,8 @@ class ImportDataSerializer(serializers.ModelSerializer):
     class Meta:
         model = ImportData
         fields = ['id', 'data', 'created_at']
+
+class ImportScanResultSerializer(serializers.ModelSerializer):
+    class Meta:
+        model = ImportScanResult
+        fields = ['id', 'row', 'col', 'message', 'cleaner', 'activate']

@@ -1,5 +1,6 @@
 import pandas as pd
 import csv
+from rest_framework.pagination import PageNumberPagination
 
 from api.models import Import, ImportData
 
@@ -46,3 +47,8 @@ def df_from_import_model(import_id: int) -> pd.DataFrame:
     
     except Exception as e:
         raise Exception(f"Error occurred while generating dataframe: {str(e)}")
+
+class AutocleanAPIPagination(PageNumberPagination):
+    page_size = 10
+    page_size_query_param = 'page_size'
+    max_page_size = 100
