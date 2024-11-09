@@ -1,15 +1,19 @@
 from django.contrib.auth.models import User
 from django.views.decorators.http import require_POST
-from rest_framework import viewsets, status
+from rest_framework import viewsets, status, generics
 from rest_framework.response import Response
 from rest_framework.views import APIView
 from rest_framework.permissions import IsAuthenticated
 from rest_framework.decorators import action
 from rest_framework.pagination import PageNumberPagination
+from rest_framework.exceptions import NotFound
 from celery import chain
 from drf_spectacular.utils import extend_schema, OpenApiParameter
 
-from .serializers import UserSerializer, UploadImportSerializer, ImportSerializer, ImportDataSerializer
+from .serializers import (
+    UserSerializer, UploadImportSerializer, ImportSerializer, ImportDataSerializer,
+    TaskProgressSerializer
+)
 from .tasks import read_file_to_import_data, scan_import
 from .models import TaskProgress, Import, ImportData
 
@@ -17,6 +21,17 @@ class UserViewSet(viewsets.ModelViewSet):
     queryset = User.objects.exclude(is_superuser=True)
     serializer_class = UserSerializer
     permission_classes = [IsAuthenticated]
+
+class TaskProgressRetrieveAPIView(generics.RetrieveAPIView):
+    queryset = TaskProgress.objects.all()
+    serializer_class = TaskProgressSerializer
+    lookup_field = 'uuid'
+
+    def get_object(self):
+        try:
+            return TaskProgress.objects.get(uuid=self.kwargs['uuid'])
+        except TaskProgress.DoesNotExist:
+            raise NotFound(detail="TaskProgress with this UUID does not exist.")
 
 class ImportUploadView(APIView):
     serializer_class = UploadImportSerializer

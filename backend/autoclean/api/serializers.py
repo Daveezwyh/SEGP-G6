@@ -1,7 +1,7 @@
 from django.contrib.auth.models import User
 from rest_framework import serializers
 
-from .models import Import, ImportData
+from .models import Import, ImportData, TaskProgress
 
 class UserSerializer(serializers.ModelSerializer):
     password = serializers.CharField(write_only=True)
@@ -10,6 +10,11 @@ class UserSerializer(serializers.ModelSerializer):
         model = User
         fields = '__all__'
         read_only_fields = ('is_staff', 'is_superuser')
+
+class TaskProgressSerializer(serializers.ModelSerializer):
+    class Meta:
+        model = TaskProgress
+        fields = ['uuid', 'status', 'message', 'error', 'percentage', 'data']
 
 class UploadImportSerializer(serializers.ModelSerializer):
     uploaded_by = serializers.PrimaryKeyRelatedField(read_only=True)
