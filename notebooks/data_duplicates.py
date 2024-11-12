@@ -1,11 +1,14 @@
-def find_duplicates(df):
-    """
-    Find rows that are completely identical (i.e., all columns are the same).
+import pandas as pd
+
+def scan_duplicates(df):
+    duplicate_message = []
+    duplicated_rows = df[df.duplicated()]
     
-    :param df: Input dataframe
-    :return: Dataframe with only duplicate rows
-    """
-    # Use duplicated() with keep=False to identify all duplicated rows
-    df_duplicates = df[df.duplicated(keep=False)]
-    
-    return df_duplicates
+    for index in duplicated_rows.index:
+        duplicate_message.append(f"row {index} is duplicated")
+
+    return duplicate_message
+
+def remove_duplicates(df):
+    df = df.drop_duplicates().reset_index(drop=True)
+    return df
