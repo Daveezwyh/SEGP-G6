@@ -50,9 +50,6 @@ staticfiles/
 static/
 live/
 
-# Migrations
-migrations/
-
 # PyCharm specific
 .idea/
 
@@ -117,3 +114,6 @@ Procfile
 celerybeat-schedule
 celerybeat-schedule.db
 celerybeat.pid
+
+logs/
+uploads/
