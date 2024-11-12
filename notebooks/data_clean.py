@@ -1,13 +1,10 @@
 import pandas as pd
 from fancyimpute import KNN
+from sklearn.ensemble import IsolationForest
 
-def scan_missing(df):
-    missing_messages = []
-    for row_index, row in df.iterrows():
-        for col_name in df.columns:
-            if pd.isna(row[col_name]):
-                missing_messages.append(f"row {row_index} column {col_name} has missing value")
-    return missing_messages
+def remove_duplicates(df):
+    df = df.drop_duplicates().reset_index(drop=True)
+    return df
 
 def fill_missing_values_knn(df, k=6):
     df_filled = df.copy()
@@ -26,8 +23,24 @@ def fill_missing_values_knn(df, k=6):
             
     return df_filled
 
-# # Example usage
-# file_path = 'Churn_Modelling.csv'  # Replace with your file path
-# df = pd.read_csv(file_path)
-# missing_messages = scan_miising(df)
-# df_withou_missing = fill_missing_values_knn(df)
+def remove_outliers(df: pd.DataFrame, contamination: float = 0.05) -> pd.DataFrame:
+    X = df.select_dtypes(include=[float, int])
+
+    X_no_missing = X.dropna()
+
+    iforest = IsolationForest(
+        n_estimators=100,
+        max_samples='auto',
+        contamination=contamination,
+        max_features=X_no_missing.shape[1],
+        bootstrap=False,
+        n_jobs=-1,
+        random_state=1
+    )
+
+    labels = iforest.fit_predict(X_no_missing)
+      
+    inlier_indices = X_no_missing.index[labels == 1]
+    df_inliers = df.loc[inlier_indices]
+
+    return df_inliers
