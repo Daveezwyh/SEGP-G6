@@ -18,11 +18,12 @@ from django.contrib import admin
 from django.urls import path, include
 from django.http import HttpResponse
 
-from .views import test_view
+from .views import test_view, test_task_view
 
 urlpatterns = [
     path("", lambda request: HttpResponse("")),
     path("admin/", admin.site.urls),
     path("api/", include('api.urls')),
-    path("test", test_view)
+    path("test", test_view),
+    path("test/task", test_task_view)
 ]

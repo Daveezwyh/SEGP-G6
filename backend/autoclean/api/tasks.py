@@ -9,9 +9,29 @@ from autoclean.scanners.manager import ScannerManager
 logger = logging.getLogger('django')
 
 @shared_task(bind=True)
-def add(self, x, y):
-    time.sleep(3)
-    return x + y
+def test_task(self, args):
+    try:
+        task_progress_id = args["task_progress_id"]
+        task_progress = TaskProgress.objects.get(id=task_progress_id)
+
+        task_progress.status = TaskProgress.Status.PENDING.value
+        task_progress.message = "Task retrieved from queue. Processing task..."
+        task_progress.save()
+
+        for i in range(30):
+            task_progress.message = f"Processing task, step {i + 1} of 30"
+            task_progress.percentage = ((i + 1) / 30) * 100
+            task_progress.save()
+            time.sleep(1)
+        
+        task_progress.status = TaskProgress.Status.COMPLETED.value
+        task_progress.message = "Task completed successfully."
+        task_progress.save()
+        
+        return args
+    except Exception as e:
+        logger.error(f"Error in task {self.name}: {str(e)}", exc_info=True)
+        raise
 
 @shared_task(bind=True)
 def read_file_to_import_data(self, args):
@@ -64,7 +84,7 @@ def read_file_to_import_data(self, args):
                 import_instance.save()
 
                 for row in df.itertuples(index=False, name=None):
-                    row_data = {header: value for header, value in zip(headers, row)}
+                    row_data = {header: (value if pd.notnull(value) else None) for header, value in zip(headers, row)}
                     
                     try:
                         ImportData.objects.create(
