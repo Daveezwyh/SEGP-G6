@@ -1,4 +1,4 @@
-from autoclean.scanners.result import ScanResult
+from autoclean.scanners.result import ScanResult, ScannerAttribute
 import pandas as pd
 from typing import List
 from sklearn.ensemble import IsolationForest
@@ -41,6 +41,10 @@ def scan_df_for_missing(df: pd.DataFrame) -> List[ScanResult]:
 def scan_df_for_outliers(df: pd.DataFrame) -> List[ScanResult]:
     scan_results = []
     X = df.select_dtypes(include=[float, int])
+
+    if X.empty:
+        return []
+    
     X_no_missing = X.dropna()
 
     iforest = IsolationForest(
@@ -54,7 +58,6 @@ def scan_df_for_outliers(df: pd.DataFrame) -> List[ScanResult]:
     )
     
     labels = iforest.fit_predict(X_no_missing)
-
     outlier_indices = X_no_missing.index[labels == -1]
 
     for idx in outlier_indices:

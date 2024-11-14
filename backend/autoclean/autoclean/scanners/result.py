@@ -8,3 +8,8 @@ class ScanResult:
 
     def __repr__(self):
         return f"ScanResult(row={self.row}, col={self.col}, message='{self.message}', cleaner='{self.cleaner}', activate={self.activate})"
+
+class ScannerAttribute:
+    def __init__(self, name="Scanner Name", description="Scanner Description"):
+        self.name = name
+        self.description = description
