@@ -1,5 +1,5 @@
 from ScanResult import ScanResult  # Importing the ScanResult class
-from typing import List
+from typing import List, Union
 import pandas as pd
 from sklearn.ensemble import IsolationForest
 
@@ -11,9 +11,9 @@ def scan_df_for_duplicates(df: pd.DataFrame) -> List[ScanResult]:
         scan_results.append(
             ScanResult(
                 row=index,
-                col=None,  # No specific column as the entire row is duplicated
+                col=-1,  # No specific column as the entire row is duplicated
                 message=f"Row {index + 1} is duplicated",
-                cleaner="duplicate_removal",  # Placeholder for the cleaner function
+                cleaner="duplicate_removal",
                 activate=True
             )
         )
@@ -41,6 +41,19 @@ def scan_df_for_missing(df: pd.DataFrame) -> List[ScanResult]:
 def scan_df_for_outliers(df: pd.DataFrame) -> List[ScanResult]:
     scan_results = []
     X = df.select_dtypes(include=[float, int])
+
+    if X.empty:
+        scan_results.append(
+            ScanResult(
+                row=-1,
+                col=-1,
+                message="No outliers are found",
+                cleaner="outliers_not_found",
+                activate=False
+            )
+        )
+        return scan_results
+    
     X_no_missing = X.dropna()
 
     iforest = IsolationForest(
@@ -54,18 +67,37 @@ def scan_df_for_outliers(df: pd.DataFrame) -> List[ScanResult]:
     )
     
     labels = iforest.fit_predict(X_no_missing)
-
     outlier_indices = X_no_missing.index[labels == -1]
 
     for idx in outlier_indices:
         scan_results.append(
             ScanResult(
                 row=idx,
-                col=None,
+                col=-1,
                 message=f"Row {idx + 1} contains an outlier",
                 cleaner="outlier_removal",
                 activate=True
             )
         )
 
+    return scan_results
+
+
+def scan_for_target(df: pd.DataFrame, target: Union[str, int, float]) -> List[ScanResult]:
+    scan_results = []
+    
+    for row_index, row in df.iterrows():
+        for col_name in df.columns:
+            if row[col_name] == target:
+                # If target is found, add a ScanResult
+                scan_results.append(
+                    ScanResult(
+                        row=row_index,
+                        col=col_name,
+                        message=f"Target '{target}' found in row {row_index + 1}, column '{col_name}'",
+                        cleaner="target_removal",
+                        activate=True
+                    )
+                )
+                
     return scan_results

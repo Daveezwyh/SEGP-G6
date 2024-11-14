@@ -26,6 +26,9 @@ def fill_missing_values_knn(df, k=6):
 def remove_outliers(df: pd.DataFrame, contamination: float = 0.05) -> pd.DataFrame:
     X = df.select_dtypes(include=[float, int])
 
+    if X.empty:
+        return df
+
     X_no_missing = X.dropna()
 
     iforest = IsolationForest(
