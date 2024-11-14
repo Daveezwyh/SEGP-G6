@@ -1,28 +1,24 @@
-import Login from '../pages/Login'
-import Register from '../pages/Register'
-import Layout from '../pages/Layout'
-import Homepage from '../pages/Homepage'
+import React from 'react';
+import Login from '../pages/Login';
+import Register from '../pages/Register';
+import Homepage from '../pages/Homepage';
 
-import {createBrowserRouter} from 'react-router-dom'
-import { AuthRoute } from '../components/AuthRoute'
+import { createBrowserRouter } from 'react-router-dom';
+import { AuthRoute } from '../components/AuthRoute';
 
 const router = createBrowserRouter([
     {
         path: "/",
-        element: <Login/>
+        element: <Login />
     },
     {
         path: "/register",
-        element: <Register/>
+        element: <Register />
     },
     {
         path: "/homepage",
-        element: <Homepage/>
+        element: <AuthRoute><Homepage /></AuthRoute>
     },
-    {
-        path: "/layout",
-        element: <AuthRoute><Layout/></AuthRoute>
-    }
-])
+]);
 
-export default router
+export default router;

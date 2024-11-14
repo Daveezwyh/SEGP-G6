@@ -7,101 +7,124 @@
     width: 100vw;
     height: 100vh;
     position: relative;
-    background: no-repeat center/cover url(../../assets/background.png);
+    background: no-repeat center/cover url(../../assets/background.svg);
 
-    .register-container {
-        width: 1000px;
-        height: 600px;
-        border-radius: 40px;
-        background-color: #fff;
+    .rectangle-background {
         position: absolute;
         left: 50%;
         top: 50%;
         transform: translate(-50%, -50%);
-        box-shadow: 0 0 50px rgba(0, 0, 0, 0.3);
         display: flex;
+        width: 100%;
+        height: 100%;
+        justify-content: center;
+        align-items: center;
 
-        .left-img {
-            flex: 1;
-            border-radius: 40px;
-            background: no-repeat center/cover url(../../assets/logo.png);
-            position: relative;
+        .rectangle1 {
+            background: no-repeat center/cover url(../../assets/Rectangle1.svg);
+            background-size: cover;
 
-            .glass {
-                width: 60%;
-                padding: 20px;
-                position: absolute;
-                top: 20%;
-                left: 50%;
-                transform: translate(-50%, -20%);
-                background: rgba(255, 255, 255, 0.1);
-                box-shadow: 0 8px 32px rgba(31, 38, 135, 0.37);
-                backdrop-filter: blur(10px);
-                border-radius: 15px;
-                border: 1px solid rgba(255, 255, 255, 0.48);
+            width: 54.24%;
+            height: 70%;
+            top: 15%;
+            left: 15%;
+            gap: 0px;
+            border-radius: 50px 0px 0px 0px;
+            opacity: 0px;
+            border-radius: 50px;
 
-                .tips {
-                    .title {
-                        width: 100%;
-                        font-weight: 600;
-                        font-size: 15px;
-                        text-align: center;
-                        padding: 10px;
-                        background: rgba(255, 255, 255, 0.1);
-                        box-shadow: 0 8px 32px rgba(31, 38, 135, 0.37);
-                        backdrop-filter: blur(10px);
-                        border-radius: 15px;
+            position: absolute;
+            z-index: 1;
+        }
+        
+        .rectangle2 {
+            background: no-repeat center/cover url(../../assets/Rectangle2.svg);
+            background-size: cover;
 
-                        h1 {
-                            margin: 15px 0;
-                        }
-
-                        span {
-                            margin: 5px 0;
-                            display: block;
-                            font-weight: 100;
-                        }
-                    }
-                }
-            }
+            width: 48.13%;
+            height: 70%;
+            top: 15%;
+            left: 38%;
+            gap: 0px;
+            border-radius: 50px 0px 0px 0px;
+            opacity: 0px;
+            border-radius: 50px;
+            
+            position: absolute;
+            z-index: 2;
         }
 
+        .logo {
+            background: no-repeat center/cover url(../../assets/logo.svg);
+            background-size: cover;
+
+            width: 30%;
+            height: 50%;
+            top: 25%;
+            left: 15%;
+
+            position: absolute;
+            z-index: 3;
+        }
+    }
+
+    .register-container {
+        position: absolute;
+        width: 300px;
+        left: 67%;
+        top: 48%;
+        transform: translate(-50%, -50%);
+        display: flex;
+
         .register-form {
-            flex: 1;
             position: relative;
+            margin-top: 60px;
 
-            .form-wrapper {
-                position: absolute;
-                left: 50%;
-                top: 50%;
-                transform: translate(-50%, -50%);
-                
-                h1 {
-                    font-size: 30px;
-                    text-align: center;
-                    margin-bottom: 20px;
-                }
+            h1 {
+                font-family: 'Gill Sans', 'Gill Sans MT', Calibri, 'Trebuchet MS', sans-serif;
+                font-size: 40px;
+                font-weight: 400;
+                line-height: 54.55px;
+                color: rgba(255, 255, 255, 1);
+            }
 
-                .input-item {
-                    width: 100%; // Full width for responsiveness
-                    height: 40px;
-                    border-radius: 10px;
-                    margin-bottom: 15px;
-                }
+            .input-item{
+                width: 350px;
+                height: 50px;
+                margin-bottom: 15px;
+            }
 
-                .button {
-                    width: 100%;
-                    margin-top: 20px;
-                }
+            .button {
+                background: rgba(255, 255, 255, 1);
+                width: 130px;
+                margin-top: 10px;
+                border-radius: 50px;
+                left: 63%;
+            }
+
+            .button:hover {
+                background: rgba(0, 123, 255, 1);
+                border: 2px solid #007bff;
+                color: white;
+            }
+
+            .ant-btn {
+                font-family: Arial, Helvetica, sans-serif;
+                color: black;
+                font-weight: 1000;
+                font-size: 20px;
+                letter-spacing: 0.02em;
             }
 
             .input-tips {
                 display: inline-block;
+                color: rgba(255, 255, 255, 1);
                 font-weight: 600;
                 font-size: 20px;
             }
 
             .have-account {
+                color: white;
                 text-align: center;
                 font-weight: 600;
                 margin: 10px 0;
@@ -109,29 +132,50 @@
         }
     }
 
-    // Mobile Styles
     @media (max-width: 768px) {
         .register-container {
             width: 90%;
-            height: 60%;
+            height: auto;
+            left: 50%;
+            top: 40%;
+            transform: translate(-50%, -50%);
+            display: flex;
             flex-direction: column;
             padding: 20px;
+            border-radius: 10px;
+            border: 3px solid rgba(255, 255, 255, 0.3);
+        }
+    
+        .rectangle-background {
+            display: none;
+        }
 
-            .left-img {
-                display: none; // Hide image section on mobile for simplicity
-            }
-
-            .register-form {
-                width: 100%;
-                padding: 10px;
-
-                .form-wrapper {
-                    width: 100%;
-                    transform: none;
-                    left: 0;
-                    top: 0;
-                }
-            }
+        .rectangle-background .logo {
+            display: none;
+        }
+    
+        .register-form h1 {
+            font-size: 28px;
+            margin-bottom: 20px;
+            text-align: center;
+            color: rgb(255, 255, 255);
+            font-weight: 600;
+        }
+    
+        .input-item {
+            width: 100%;
+            max-width: 300px;
+            height: 45px;
+            margin-bottom: 15px;
+            padding-left: 15px;
+            font-size: 16px;
+            margin-left: auto;
+            margin-right: auto;
+            border-radius: 25px;
+        }
+    
+        .have-account a {
+            color: #007bff;
         }
     }
 }

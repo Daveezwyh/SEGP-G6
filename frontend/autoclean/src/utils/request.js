@@ -3,7 +3,7 @@ import axios from 'axios'
 import { getToken } from './token';
 
 const request = axios.create({
-    baseUrl: '',
+    baseUrl: 'http://35.213.150.144:8000/api/doc#/token/token_create',
     timeout: 5000
 })
 

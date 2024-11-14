@@ -1,29 +1,50 @@
-import React from 'react';
+import React, { useRef, useEffect, useState } from 'react';
+import Dropzone from "dropzone";
+import "dropzone/dist/dropzone.css";
 
 export default function Body() {
-    const handleFileUpload = (event) => {
-        const file = event.target.files[0];
-        if (file) {
-            alert(`File uploaded: ${file.name}`);
+    const dropzoneRef = useRef(null);  
+    const [fileAdded, setFileAdded] = useState(false);
+
+    useEffect(() => {
+        const dropzone = new Dropzone(dropzoneRef.current, {
+            url: "/upload",
+            acceptedFiles: ".xlsx, .xls .csv",
+            maxFiles: 1,
+            autoProcessQueue: false, 
+            dictDefaultMessage: "Drag and drop your Excel file here, or click to browse",
+            init: function () {
+                this.on("addedfile", (file) => {
+                    setFileAdded(true); // Set fileAdded to true when a file is added
+                    alert(`File added: ${file.name}`);
+                });
+            }
+        });
+
+        return () => dropzone.destroy(); 
+    }, []);
+
+    const handleConfirmUpload = () => {
+        const dropzone = dropzoneRef.current.dropzone;
+        if (fileAdded) {
+            dropzone.processQueue(); 
+        } else {
+            alert("Please add a file first.");
         }
     };
 
     return (
-        <div className="flex flex-col  items-center fit-h-screen space-y-8 mt-11">
+        <div className="flex flex-col items-center fit-h-screen space-y-8 mt-11 dark:text-cyan-400">
             <h1 className="text-center font-bold text-3xl">Upload File for Data Cleaning</h1>
-            <button 
-                onClick={() => document.getElementById('excelUpload').click()} 
-                className="bg-red-500 hover:bg-red-700 text-white rounded font-bold py-4 px-20"
+            <div
+                ref={dropzoneRef} 
+                className="dropzone w-[75%] h-50 border-2 border-dashed border-gray-400 rounded flex justify-center items-center text-gray-600 dark:border-gray-500 dark:text-cyan-400"
             >
-                Upload Excel File
-            </button>
-            <input 
-                type="file" 
-                id="excelUpload" 
-                accept=".xlsx, .xls" 
-                className="hidden" 
-                onChange={handleFileUpload} 
-            />
+            </div>
+
+            <button onClick={handleConfirmUpload} className="bg-main hover:bg-mainHover text-white rounded-2xl font-bold py-4 px-[30%] mt-4" >
+                Process
+            </button> 
         </div>
     );
 }

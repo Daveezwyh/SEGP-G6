@@ -5,58 +5,49 @@ import { useDispatch } from 'react-redux';
 import { fetchLogin } from '../../store/modules/user';
 
 const Login = () => {
-    const dispatch = useDispatch()
-    const navigate = useNavigate()
+    const dispatch = useDispatch();
+    const navigate = useNavigate();
+
     const onFinish = async (values) => {
         console.log(values);
-        //action fetchlogin
-        await dispatch(fetchLogin(values))
+        try {
+            const isLoginSuccessful = await dispatch(fetchLogin(values));
+    
+            if (isLoginSuccessful) {
 
-        navigate('/layout')
-
-        message.success('Login Successfully!')
-    };
+                navigate('/homepage');
+                message.success('Login Successfully!');
+            } else {
+                message.error('Login failed. Please check your username and password.');
+            }
+        } catch (error) {
+            message.error('An error occurred during login.');
+        }
+    };    
 
     return (
         <div className="login">
+            <div className="rectangle-background">
+                <div className="rectangle1"></div>
+                <div className="rectangle2"></div>
+                <div className="logo"></div>
+            </div>
+
             <div className="login-container">
-                
-                {/* Image */}
-                <div className="left-img">
-                    <div className="glass">
-                        <div className="tips">
-                            <div className="title">DATA CLEANING</div>
-                            <h1>Clean up all garbage data</h1>
-                            <span>5 Million+ people have chosen our tool. </span>
-                            <span>We invite you to join us!</span>
-                        </div>
-                    </div>
-                </div>
-
-                {/* Login Form */}
                 <div className="login-form">
-                    <div className="form-wrapper">
+                    
                         <Form onFinish={onFinish} validateTrigger="onBlur">
-                            <h1>Log in</h1>
+                            <h1>LOG IN</h1>
 
-                            {/* Email Input */}
-                            <span className="input-tips">Email Address</span>
+                            {/* Username Input */}
+                            <span className="input-tips">Username</span>
                             <Form.Item
                                 className="input-item"
-                                name="email"
-                                rules={[
-                                    {
-                                        required: true,
-                                        message: 'Please input your email address!'
-                                    },
-                                    {
-                                        pattern: /^[a-zA-Z0-9._%+-]+@[a-zA-Z0-9.-]+\.[a-zA-Z]{2,}$/,
-                                        message: 'Please enter a valid email address!'
-                                    }
-                                ]}
+                                name="username"
+                                rules={[{ required: true, message: 'Please input your username!' }]}
                                 hasFeedback
                             >
-                                <Input size="large" placeholder="Please enter your email address" />
+                                <Input size="large" placeholder="Please enter your username" />
                             </Form.Item>
 
                             {/* Password Input */}
@@ -72,18 +63,17 @@ const Login = () => {
 
                             {/* Submit Button */}
                             <Form.Item>
-                                <Button className='button' type="primary" htmlType="submit" size="large" block>
+                                <Button className="button" type="primary" htmlType="submit" size="large" block>
                                     Login
                                 </Button>
                             </Form.Item>
 
-                            {/* Signup Link */}
+                            {/*Sign Up*/}
                             <div className="sign-up">
                                 <span>Don't Have An Account? </span>
-                                <Link to = "/register">Sign up</Link>
+                                <Link to="/register">Sign up</Link>
                             </div>
                         </Form>
-                    </div>
                 </div>
             </div>
         </div>

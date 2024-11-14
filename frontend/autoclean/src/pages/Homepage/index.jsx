@@ -3,13 +3,16 @@ import 'bootstrap/dist/js/bootstrap.bundle.min.js';
 import Header from "./Header.jsx"
 import Footer from "./footer.jsx"
 import Body from "./body.jsx"
-
+import Sidebar from './Sidebar.jsx';
+import React from 'react';
 export default function Homepage() {
     return (
-        <div className="bg-gray-50 min-h-screen">
+        <div className="min-h-screen dark:bg-gray-700">
             <Header />
             <Body />
-            <Footer />
+            <Footer/>
+            <Sidebar/>
+           
         </div>
     );
 }

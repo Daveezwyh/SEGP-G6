@@ -1,3 +1,5 @@
+import React from 'react';
+import { message } from 'antd';
 import { Form, Input, Button } from 'antd';
 import './index.scss';
 import axios from 'axios';
@@ -9,13 +11,13 @@ const Register = () => {
     const onFinish = async (values) => {
         console.log(values);
         try {
-            const response = await axios.post('', values);
+            const response = await axios.post('http://35.213.150.144:8000/api/users/', values);
             console.log('Registration successful:', response.data);
-            // Jumping to the login page
+            message.success('Registration successful!');
             navigate('/');
         } catch (error) {
             console.error('Registration failed:', error.response ? error.response.data : error.message);
-            // Handle errors, such as displaying error messages
+            message.error('Registration failed: ' + (error.response ? error.response.data.detail || 'Unknown error' : error.message));
         }
     };
 
@@ -31,45 +33,27 @@ const Register = () => {
 
     return (
         <div className="register">
+            <div className="rectangle-background">
+                <div className="rectangle1"></div>
+                <div className="rectangle2"></div>
+                <div className="logo"></div>
+            </div>
+
             <div className="register-container">
-
-                {/* Image */}
-                <div className="left-img">
-                    <div className="glass">
-                        <div className="tips">
-                            <div className="title">DATA CLEANING</div>
-                            <h1>Clean up all garbage data</h1>
-                            <span>5 Million+ people have chosen our tool. </span>
-                            <span>We invite you to join us!</span>
-                        </div>
-                    </div>
-                </div>
-
-                {/* Login Form */}
                 <div className="register-form">
-                    <div className="form-wrapper">
 
                         <Form onFinish={onFinish} validateTrigger="onBlur">
                             <h1>Register</h1>
 
-                            {/* Email Input */}
-                            <span className="input-tips">Email Address</span>
+                            {/* Username Input */}
+                            <span className="input-tips">Username</span>
                             <Form.Item
                                 className="input-item"
-                                name="email"
-                                rules={[
-                                    {
-                                        required: true,
-                                        message: 'Please input your email address!'
-                                    },
-                                    {
-                                        pattern: /^[a-zA-Z0-9._%+-]+@[a-zA-Z0-9.-]+\.[a-zA-Z]{2,}$/,
-                                        message: 'Please enter a valid email address!'
-                                    }
-                                ]}
+                                name="username"
+                                rules={[{required: true,message: 'Please input your username!'}]}
                                 hasFeedback
                             >
-                                <Input size="large" placeholder="Please enter your email address" />
+                                <Input size="large" placeholder="Please enter your username" />
                             </Form.Item>
 
                             {/* Password Input */}
@@ -77,16 +61,7 @@ const Register = () => {
                             <Form.Item
                                 className="input-item"
                                 name="password"
-                                rules={[
-                                    { 
-                                        required: true, 
-                                        message: 'Please input your password!' 
-                                    },
-                                    {
-                                        pattern: /^.{8,20}$/,
-                                        message: 'Password must be between 8 to 20 characters.'
-                                    }
-                                ]}
+                                rules={[{ required: true, message: 'Please input your password!' }]}
                                 hasFeedback
                             >
                                 <Input.Password size="large" placeholder="Please enter your password" />
@@ -112,13 +87,12 @@ const Register = () => {
 
                             {/*Have an account*/}
                             <div className="have-account">
-                                <span>Already have an account?</span>
+                                <span>Already have an account? </span>
                                 <Link to ="/">Please log in</Link>
                             </div>
 
                         </Form>
                     </div>
-                </div>
             </div>
         </div>
     );
