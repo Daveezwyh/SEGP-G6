@@ -79,25 +79,24 @@ def scan_df_for_outliers(df: pd.DataFrame) -> List[ScanResult]:
                 activate=True
             )
         )
-
     return scan_results
 
-
-def scan_for_target(df: pd.DataFrame, target: Union[str, int, float]) -> List[ScanResult]:
+def scan_categorical_col_for_encoding(df: pd.DataFrame, max_unique: int = 10) -> List[ScanResult]:
     scan_results = []
-    
-    for row_index, row in df.iterrows():
-        for col_name in df.columns:
-            if row[col_name] == target:
-                # If target is found, add a ScanResult
-                scan_results.append(
-                    ScanResult(
-                        row=row_index,
-                        col=col_name,
-                        message=f"Target '{target}' found in row {row_index + 1}, column '{col_name}'",
-                        cleaner="target_removal",
-                        activate=True
-                    )
+    categorical_columns = df.select_dtypes(include=['object', 'category']).columns
+
+    for col_index, column in enumerate(categorical_columns):
+        unique_values = df[column].nunique()
+        
+        if unique_values <= max_unique:
+            scan_results.append(
+                ScanResult(
+                    row=-1,
+                    col=col_index,
+                    message=f"Column '{column}' is suitable for encoding with {unique_values} unique values.",
+                    cleaner="factorize_encoding",
+                    activate=True
                 )
-                
+            )
+    
     return scan_results
