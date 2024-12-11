@@ -5,8 +5,9 @@ from rest_framework.views import APIView
 from rest_framework.permissions import IsAuthenticated
 from rest_framework.decorators import action
 from rest_framework.exceptions import NotFound
+from rest_framework.parsers import MultiPartParser
 from celery import chain
-from drf_spectacular.utils import extend_schema, OpenApiParameter
+from drf_spectacular.utils import extend_schema, OpenApiParameter, OpenApiTypes, OpenApiResponse
 
 from .serializers import (
     UserSerializer, UploadImportSerializer, ImportSerializer, ImportDataSerializer, ImportScanResultSerializer,
@@ -36,7 +37,33 @@ class ImportUploadView(APIView):
     serializer_class = UploadImportSerializer
     http_method_names = ['post']
     permission_classes = [IsAuthenticated]
+    parser_classes = [MultiPartParser]
 
+    @extend_schema(
+        request={
+            'multipart/form-data': {
+                'type': 'object',
+                'properties': {
+                    'file': {
+                        'type': 'string',
+                        'format': 'binary',
+                        'description': 'The file to upload.',
+                    },
+                    'description': {
+                        'type': 'string',
+                        'description': 'Optional description for the import.',
+                    },
+                },
+                'required': ['file'],
+            }
+        },
+        responses={
+            201: OpenApiResponse(response=UploadImportSerializer, description="File uploaded successfully."),
+            400: OpenApiResponse(description="Bad request. Invalid input."),
+        },
+        summary="Upload Import File",
+        description="Endpoint to upload a file for import processing. The file must be a valid CSV or Excel file.",
+    )
     def post(self, request):
         serializer = self.serializer_class(data=request.data)
 
