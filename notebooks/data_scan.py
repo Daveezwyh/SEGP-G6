@@ -1,7 +1,9 @@
 from ScanResult import ScanResult  # Importing the ScanResult class
-from typing import List, Union
+from typing import List
 import pandas as pd
+import numpy as np
 from sklearn.ensemble import IsolationForest
+from collections import Counter
 
 def scan_df_for_duplicates(df: pd.DataFrame) -> List[ScanResult]:
     scan_results = []
@@ -40,63 +42,99 @@ def scan_df_for_missing(df: pd.DataFrame) -> List[ScanResult]:
 
 def scan_df_for_outliers(df: pd.DataFrame) -> List[ScanResult]:
     scan_results = []
-    X = df.select_dtypes(include=[float, int])
-
-    if X.empty:
-        scan_results.append(
-            ScanResult(
-                row=-1,
-                col=-1,
-                message="No outliers are found",
-                cleaner="outliers_not_found",
-                activate=False
-            )
-        )
-        return scan_results
     
-    X_no_missing = X.dropna()
-
-    iforest = IsolationForest(
-        n_estimators=100, 
-        max_samples='auto',
-        contamination=0.05, 
-        max_features=X_no_missing.shape[1],
-        bootstrap=False, 
-        n_jobs=-1, 
-        random_state=1
-    )
-    
-    labels = iforest.fit_predict(X_no_missing)
-    outlier_indices = X_no_missing.index[labels == -1]
-
-    for idx in outlier_indices:
-        scan_results.append(
-            ScanResult(
-                row=idx,
-                col=-1,
-                message=f"Row {idx + 1} contains an outlier",
-                cleaner="outlier_removal",
-                activate=True
-            )
-        )
-    return scan_results
-
-def scan_categorical_col_for_encoding(df: pd.DataFrame, max_unique: int = 10) -> List[ScanResult]:
-    scan_results = []
-    categorical_columns = df.select_dtypes(include=['object', 'category']).columns
-
-    for col_index, column in enumerate(categorical_columns):
-        unique_values = df[column].nunique()
+    for col_name in df.select_dtypes(include=[np.number]).columns:
+        Q1 = df[col_name].quantile(0.25)
+        Q3 = df[col_name].quantile(0.75)
+        IQR = Q3 - Q1
+        lower_bound = Q1 - 1.5 * IQR
+        upper_bound = Q3 + 1.5 * IQR
+        outlier_rows = df[(df[col_name] < lower_bound) | (df[col_name] > upper_bound)].index
         
-        if unique_values <= max_unique:
+        for idx in outlier_rows:
             scan_results.append(
                 ScanResult(
-                    row=-1,
-                    col=col_index,
-                    message=f"Column '{column}' is suitable for encoding with {unique_values} unique values.",
-                    cleaner="factorize_encoding",
+                    row=idx,
+                    col=df.columns.get_loc(col_name),
+                    message=f"Row {idx + 1} contains an outlier in column '{col_name}'",
+                    cleaner="outlier_detection",
                     activate=True
                 )
             )
-    
+
+    clf = IsolationForest(contamination=0.05, random_state=42)
+    numerical_df = df.select_dtypes(include=[np.number]).dropna()
+    if not numerical_df.empty:
+        outlier_predictions = clf.fit_predict(numerical_df)
+        for idx, prediction in enumerate(outlier_predictions):
+            if prediction == -1:
+                scan_results.append(
+                    ScanResult(
+                        row=numerical_df.index[idx],
+                        col=-1,
+                        message=f"Row {numerical_df.index[idx] + 1} is an anomaly detected by Isolation Forest",
+                        cleaner="outlier_detection",
+                        activate=True
+                    )
+                )
+
     return scan_results
+
+def scan_df_for_categorical(df: pd.DataFrame) -> List[ScanResult]:
+    scan_results = []
+    
+    for col_name in df.select_dtypes(include=['object', 'category']).columns:  
+        value_counts = df[col_name].value_counts()
+        rare_categories = value_counts[value_counts < 3].index  # set limits of 3 
+
+        for idx, value in df[col_name].items():
+            if value in rare_categories:
+                scan_results.append(
+                    ScanResult(
+                        row=idx,
+                        col=df.columns.get_loc(col_name),
+                        message=f"Rare category '{value}' in column '{col_name}'",
+                        cleaner="category_encoding",
+                        activate=True
+                    )
+                )
+
+        unique_values = df[col_name].dropna().unique()
+        cleaned_values = [str(v).strip().lower() for v in unique_values]  # Normalization
+        value_counts = Counter(cleaned_values)
+
+        for idx, value in df[col_name].items():
+            if str(value).strip().lower() not in value_counts:
+                scan_results.append(
+                    ScanResult(
+                        row=idx,
+                        col=df.columns.get_loc(col_name),
+                        message=f"Possible inconsistent category '{value}' in column '{col_name}'",
+                        cleaner="category_standardization",
+                        activate=True
+                    )
+                )
+
+    return scan_results
+
+def scan_dataframe(df: pd.DataFrame) -> List[ScanResult]:
+    scan_results = []
+    scan_results.extend(scan_df_for_duplicates(df))
+    scan_results.extend(scan_df_for_missing(df))
+    scan_results.extend(scan_df_for_outliers(df))
+    scan_results.extend(scan_df_for_categorical(df))
+    return scan_results
+
+# sample
+if __name__ == "__main__":
+    data = {
+        "A": [1, 2, 3, 4, 100, 6, 7, 8, 9, 100],  # 存在异常值
+        "B": [10, 20, 30, 40, None, 60, 70, 80, 90, 100],  # 存在缺失值
+        "C": ["X", "Y", "Z", "X", "Y", "Z", "X", "Y", "Z", "X"],
+    }
+    df = pd.DataFrame(data)
+    df.loc[3] = df.loc[0]  # make a duplicate
+
+    results = scan_dataframe(df)
+    for res in results:
+        print(res)
