@@ -1,0 +1,10 @@
+tidy
+- change progressbar folder to 'bar' folder
+- move sidebar into 'bar' folder
+
+- the position of the left topmost icon need to be fixed
+- add label for settings icon
+
+progress bar
+- make it pop up page  only?
+
