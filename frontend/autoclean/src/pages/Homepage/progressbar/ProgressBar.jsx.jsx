@@ -26,17 +26,17 @@ export default function ProgressBar() {
     // Once progress reaches TOTAL_SEGMENTS, navigate back to homepage
     if (progress === TOTAL_SEGMENTS) {
       setTimeout(() => {
-        navigate("/homepage"); // ✅ Close popup and go back to homepage
+        navigate("/homepage");
       }, 1000);
     }
   }, [progress, navigate]); // Runs when progress updates
 
   return (
     <div className="fixed inset-0 flex items-center justify-center bg-black bg-opacity-50 backdrop-blur-sm">
-      {/* Popup Box with bg-yellow-50 and border */}
+      {/* Popup Box */}
       <div className="bg-yellow-50 border border-black rounded-lg px-8 py-6 shadow-md flex flex-col items-center">
         
-        {/* White Inner Box for Content */}
+        {/* Inner Box*/}
         <div className="bg-white rounded-lg px-6 py-4 w-[400px] flex flex-col items-center shadow-sm">
           {/* Loading Text */}
           <div className="text-gray-700 font-medium mb-3 text-lg">
