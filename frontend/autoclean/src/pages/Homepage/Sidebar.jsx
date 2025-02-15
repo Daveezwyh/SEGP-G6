@@ -7,7 +7,7 @@ import { HiUserCircle } from "react-icons/hi";
 
 export default function Sidebar() {
     const [isOpen, setIsOpen] = useState(false);
-    const[showLogout, setShowLogout] = useState(false);
+    const [showLogout, setShowLogout] = useState(false);
 
     const toggleSidebar = () => {
         setIsOpen(prevState => !prevState);
@@ -21,25 +21,28 @@ export default function Sidebar() {
         setShowLogout(false);
     }
 
-
     return (
         <>
+            {/* sidebar container */}
             <div className={`fixed top-0 left-0 h-screen ${isOpen ? 'w-20' : 'w-0'} sm:${isOpen ? 'w-20' : 'w-0'} md:${isOpen ? 'w-24' : 'w-0'} lg:${isOpen ? 'w-28' : 'w-0'} transition-width duration-150 m-0 flex flex-col shadow-lg bg-side dark:bg-slate-700`}>
                 {!isOpen && (
-                    <HeaderIcon icon={<GoSidebarCollapse size="40" onClick={toggleSidebar} />} />
+                    <HeaderIcon icon={<GoSidebarCollapse size="40" onClick={toggleSidebar} />}
+                        moveRight="ml-4"
+                    />
                 )}
 
                 {isOpen && (
                     <>
-                        <SidebarIcon icon={<GoSidebarExpand size="40" onClick={toggleSidebar} />} />
-                        <SidebarIcon icon={<MdOutlineFileUpload size="40" />} />
-                        <SidebarIcon icon={<IoTimeOutline size="40" />} />
+                        <SidebarIcon icon = {<GoSidebarExpand size ="40" onClick={toggleSidebar} />} />
+                        <SidebarIcon icon = {<MdOutlineFileUpload size ="40" />} />
+                        <SidebarIcon icon = {<IoTimeOutline size ="40" />} />
                         <div className="mt-auto">
-                            <SidebarIcon icon={<IoIosLogOut size="40" onClick={openLogout} />} />
+                            <SidebarIcon icon = {<IoIosLogOut size ="40" onClick = {openLogout} />} />
                         </div>
                     </>
                 )}
             </div>
+
             {showLogout && (
             <div className="position-fixed top-0 start-0 w-100 h-100 d-flex justify-content-center align-items-center bg-dark bg-opacity-75">
                 <div className="card text-center shadow-lg p-4 bg-white text-blacks dark:bg-slate-700 dark:text-cyan-400">
@@ -72,8 +75,8 @@ const SidebarIcon = ({ icon }) => (
     </div>
 );
 
-const HeaderIcon = ({ icon }) => (
-    <div className="header-icon">
+const HeaderIcon = ({ icon, moveRight = "" }) => (
+    <div className={`header-icon ${moveRight}`}>
         {icon}
     </div>
 );

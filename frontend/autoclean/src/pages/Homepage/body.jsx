@@ -13,11 +13,11 @@ export default function Body() {
             url: "/upload",
             acceptedFiles: ".xlsx, .xls .csv",
             maxFiles: 1,
-            autoProcessQueue: false, 
-            dictDefaultMessage: "Drag and drop your Excel file here, or click to browse",
+            autoProcessQueue: false,
+            dictDefaultMessage: "Drag & Drop or Click to Upload",
             init: function () {
                 this.on("addedfile", (file) => {
-                    setFileAdded(true); // Set fileAdded to true when a file is added
+                    setFileAdded(true); // Set file Added to true when a file is added
                     alert(`File added: ${file.name}`);
                 });
             }
@@ -42,12 +42,12 @@ export default function Body() {
             
             {/* Dropzone Container */}
             <div
-                ref={dropzoneRef} 
-                className="dropzone w-[75%] h-50 border-2 border-dashed border-gray-400 rounded 
-                           flex justify-center items-center text-gray-600 
-                           dark:border-gray-500 dark:text-cyan-400"
-            >
-            </div>
+                ref={dropzoneRef}
+                className="dropzone w-[75%] h-50 border-2 border-dashed border-gray-400 rounded-lg
+                        flex justify-center items-center text-gray-600 
+                        dark:border-gray-500 dark:text-cyan-400 
+                        hover:border-blue-500 hover:bg-gray-100 transition-all"
+            ></div>
 
             {/* Process Button */}
             <button
