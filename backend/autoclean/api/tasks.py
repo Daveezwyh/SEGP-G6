@@ -2,7 +2,7 @@ from celery import shared_task
 import time, logging, os
 import pandas as pd
 
-from .models import TaskProgress, Import, ImportData, ImportScanResult
+from .models import TaskProgress, Import, ImportData, ImportDataOriginal, ImportScanResult
 from autoclean.utils import auto_read_csv_file_to_df, df_from_import_model
 from autoclean.scanners.manager import ScannerManager
 
@@ -108,6 +108,39 @@ def read_file_to_import_data(self, args):
     except Import.DoesNotExist:
         logger.error(f"Import with ID {import_id} does not exist.", exc_info=True)
         raise
+    except Exception as e:
+        logger.error(f"Error in task {self.name}: {str(e)}", exc_info=True)
+        raise
+
+@shared_task(bind=True)
+def copy_import_data_original(self, args):
+    try:
+        task_progress_id = args["task_progress_id"]
+        import_id = args["import_id"]
+
+        import_instance = Import.objects.get(id=import_id)
+        task_progress = TaskProgress.objects.get(id=task_progress_id)
+
+        task_progress.message = "Saving original copy of import data records..."
+        task_progress.save()
+
+        import_data_records = ImportData.objects.filter(import_model=import_instance)
+
+        original_records = [
+            ImportDataOriginal(
+                import_model=import_instance,
+                data=import_data.data,
+                created_at=import_data.created_at
+            )
+            for import_data in import_data_records
+        ]
+
+        ImportDataOriginal.objects.bulk_create(original_records)
+
+        task_progress.message = "Original copy of import data records saved successfully."
+        task_progress.save()
+
+        return args
     except Exception as e:
         logger.error(f"Error in task {self.name}: {str(e)}", exc_info=True)
         raise

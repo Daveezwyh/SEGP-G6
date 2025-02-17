@@ -13,7 +13,7 @@ from .serializers import (
     UserSerializer, UploadImportSerializer, ImportSerializer, ImportDataSerializer, ImportScanResultSerializer,
     TaskProgressSerializer
 )
-from .tasks import read_file_to_import_data, scan_import
+from .tasks import read_file_to_import_data, copy_import_data_original, scan_import
 from .models import TaskProgress, Import, ImportData, ImportScanResult
 from autoclean.utils import AutocleanAPIPagination
 
@@ -92,6 +92,7 @@ class ImportUploadView(APIView):
                     "task_progress_id": task_progress.id,
                     "import_id": Import.id
                 }),
+                copy_import_data_original.s(),
                 scan_import.s()
             )
 

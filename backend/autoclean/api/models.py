@@ -29,6 +29,11 @@ class ImportData(models.Model):
     data = models.JSONField(null=True, blank=True)
     created_at = models.DateTimeField(auto_now_add=True, null=True, blank=True)
 
+class ImportDataOriginal(models.Model):
+    import_model = models.ForeignKey(Import, related_name="import_data_ori", on_delete=models.CASCADE)
+    data = models.JSONField(null=True, blank=True)
+    created_at = models.DateTimeField(auto_now_add=True, null=True, blank=True)
+
 class ImportScanResult(models.Model):
     id = models.AutoField(primary_key=True)
     row = models.IntegerField()
