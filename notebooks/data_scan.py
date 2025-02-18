@@ -3,7 +3,7 @@ from typing import List
 import pandas as pd
 import numpy as np
 from sklearn.ensemble import IsolationForest
-from collections import Counter
+from rapidfuzz import fuzz
 
 def scan_df_for_duplicates(df: pd.DataFrame) -> List[ScanResult]:
     scan_results = []
@@ -23,118 +23,116 @@ def scan_df_for_duplicates(df: pd.DataFrame) -> List[ScanResult]:
     return scan_results
 
 def scan_df_for_missing(df: pd.DataFrame) -> List[ScanResult]:
-    scan_results = []
-
-    for row_index, row in df.iterrows():
-        for col_index, col_name in enumerate(df.columns):
-            if pd.isna(row[col_name]):
-                scan_results.append(
-                    ScanResult(
-                        row=row_index,
-                        col=col_index,
-                        message=f"Missing value in row {row_index + 1}, column {col_name}",
-                        cleaner="fill_missing",
-                        activate=True
-                    )
-                )
-
-    return scan_results
+    missing_matrix = df.isna()
+    return [
+        ScanResult(
+            row=row_idx,
+            col=df.columns[col_idx],
+            message=f"Missing value in row {row_idx+1}, column {col_idx}",
+            cleaner="fill_missing",
+            activate=True
+        )
+        for (row_idx, col_idx) in zip(*np.where(missing_matrix))
+    ]
 
 def scan_df_for_outliers(df: pd.DataFrame) -> List[ScanResult]:
     scan_results = []
     
-    for col_name in df.select_dtypes(include=[np.number]).columns:
-        Q1 = df[col_name].quantile(0.25)
-        Q3 = df[col_name].quantile(0.75)
-        IQR = Q3 - Q1
-        lower_bound = Q1 - 1.5 * IQR
-        upper_bound = Q3 + 1.5 * IQR
-        outlier_rows = df[(df[col_name] < lower_bound) | (df[col_name] > upper_bound)].index
+    # Dynamically calculate contamination
+    def auto_contamination(n):
+        return min(0.1, max(0.01, 5/np.log(n)))
+    
+    for col in df.select_dtypes(include=[np.number]):
+        # Automatically switch detection methods
+        skewness = df[col].skew()
+        if abs(skewness) > 1:  # Use MAD for detection
+            median = df[col].median()
+            mad = (df[col] - median).abs().median()
+            threshold = 3 * mad
+            outliers = df[col].sub(median).abs().gt(threshold)
+        else:  # Use IQR
+            q1, q3 = df[col].quantile([0.25, 0.75])
+            iqr = q3 - q1
+            outliers = ~df[col].between(q1-1.5*iqr, q3+1.5*iqr)
         
-        for idx in outlier_rows:
+        # Record results
+        scan_results.extend(
+            ScanResult(
+                row=idx,
+                col=df.columns.get_loc(col),
+                message=f"Outlier in {col} (value={df.at[idx, col]:.2f})",
+                cleaner="outlier_handling",
+                activate=True
+            )
+            for idx in df[outliers].index
+        )
+    
+    # Multivariate detection
+    numerical_df = df.select_dtypes(include=[np.number]).dropna()
+    if len(numerical_df) > 10:
+        contamination = auto_contamination(len(numerical_df))
+        clf = IsolationForest(
+            contamination=contamination,
+            random_state=42,
+            n_estimators=min(100, len(numerical_df)//10))
+        
+        outlier_flags = clf.fit_predict(numerical_df) == -1
+        for idx in numerical_df[outlier_flags].index:
             scan_results.append(
                 ScanResult(
                     row=idx,
-                    col=df.columns.get_loc(col_name),
-                    message=f"Row {idx + 1} contains an outlier in column '{col_name}'",
-                    cleaner="outlier_detection",
+                    col=-1,
+                    message="Multivariate anomaly detected",
+                    cleaner="multivariate_outlier",
                     activate=True
                 )
             )
-
-    clf = IsolationForest(contamination=0.05, random_state=42)
-    numerical_df = df.select_dtypes(include=[np.number]).dropna()
-    if not numerical_df.empty:
-        outlier_predictions = clf.fit_predict(numerical_df)
-        for idx, prediction in enumerate(outlier_predictions):
-            if prediction == -1:
-                scan_results.append(
-                    ScanResult(
-                        row=numerical_df.index[idx],
-                        col=-1,
-                        message=f"Row {numerical_df.index[idx] + 1} is an anomaly detected by Isolation Forest",
-                        cleaner="outlier_detection",
-                        activate=True
-                    )
-                )
-
+    
     return scan_results
 
-def scan_df_for_categorical(df: pd.DataFrame) -> List[ScanResult]:
+def scan_df_for_categorical(df: pd.DataFrame, 
+                           max_categories: int = 50,
+                           categorical_dtypes: list = ['object', 'category', 'bool']) -> List[ScanResult]:
     scan_results = []
     
-    for col_name in df.select_dtypes(include=['object', 'category']).columns:  
-        value_counts = df[col_name].value_counts()
-        rare_categories = value_counts[value_counts < 3].index  # set limits of 3 
-
-        for idx, value in df[col_name].items():
-            if value in rare_categories:
+    # Drop fully numeric columns
+    non_numeric_cols = df.select_dtypes(exclude=[np.number])
+    
+    for col in non_numeric_cols.columns:
+        # Skip empty or all-null columns
+        if df[col].dropna().empty:
+            continue
+            
+        # Conditions for detecting categorical features
+        is_categorical = (
+            df[col].dtype in categorical_dtypes or 
+            (df[col].dtype.kind in 'iuf' and df[col].nunique() <= min(max_categories, len(df)**0.5)) or
+            df[col].dtype == 'bool'
+        )
+        
+        # Exclude high-cardinality columns (e.g., free text)
+        unique_count = df[col].nunique()
+        is_high_cardinality = unique_count > max_categories
+        
+        if is_categorical and not is_high_cardinality:
+            try:
+                categories = df[col].dropna().unique()
+                categories_str = ", ".join([str(x) for x in categories[:10]])
+                if len(categories) > 10:
+                    categories_str += f"... (Total {len(categories)} categories)"
+                
                 scan_results.append(
                     ScanResult(
-                        row=idx,
-                        col=df.columns.get_loc(col_name),
-                        message=f"Rare category '{value}' in column '{col_name}'",
-                        cleaner="category_encoding",
+                        row=-1,  # Mark for column-wide processing
+                        col=df.columns.get_loc(col),
+                        message=(f"Categorical feature column '{col}' detected with {len(categories)} categories: {categories_str}"),
+                        cleaner="categorical_features_encoded",
                         activate=True
                     )
                 )
+            except Exception as e:
+                print(f"Error processing column {col}: {str(e)}")
+                continue
 
-        unique_values = df[col_name].dropna().unique()
-        cleaned_values = [str(v).strip().lower() for v in unique_values]  # Normalization
-        value_counts = Counter(cleaned_values)
-
-        for idx, value in df[col_name].items():
-            if str(value).strip().lower() not in value_counts:
-                scan_results.append(
-                    ScanResult(
-                        row=idx,
-                        col=df.columns.get_loc(col_name),
-                        message=f"Possible inconsistent category '{value}' in column '{col_name}'",
-                        cleaner="category_standardization",
-                        activate=True
-                    )
-                )
-
+                
     return scan_results
-
-def scan_dataframe(df: pd.DataFrame) -> List[ScanResult]:
-    scan_results = []
-    scan_results.extend(scan_df_for_duplicates(df))
-    scan_results.extend(scan_df_for_missing(df))
-    scan_results.extend(scan_df_for_outliers(df))
-    scan_results.extend(scan_df_for_categorical(df))
-    return scan_results
-
-# sample
-if __name__ == "__main__":
-    data = {
-        "A": [1, 2, 3, 4, 100, 6, 7, 8, 9, 100],  # 存在异常值
-        "B": [10, 20, 30, 40, None, 60, 70, 80, 90, 100],  # 存在缺失值
-        "C": ["X", "Y", "Z", "X", "Y", "Z", "X", "Y", "Z", "X"],
-    }
-    df = pd.DataFrame(data)
-    df.loc[3] = df.loc[0]  # make a duplicate
-
-    results = scan_dataframe(df)
-    for res in results:
-        print(res)
