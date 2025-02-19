@@ -2,3 +2,5 @@
 *.csv
 logs.log
 __pycache__
+*.pkl
+catboost_info
