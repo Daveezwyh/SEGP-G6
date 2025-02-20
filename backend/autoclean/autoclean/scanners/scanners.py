@@ -13,8 +13,6 @@ def scan_df_for_duplicates(df: pd.DataFrame) -> List[ScanResult]:
                 row=index,
                 col=-1,  # No specific column as the entire row is duplicated
                 message=f"Row {index + 1} is duplicated",
-                cleaner="duplicate_removal",  # Placeholder for the cleaner function
-                activate=True
             )
         )
 
@@ -31,8 +29,6 @@ def scan_df_for_missing(df: pd.DataFrame) -> List[ScanResult]:
                         row=row_index,
                         col=col_index,
                         message=f"Missing value in row {row_index + 1}, column {col_name}",
-                        cleaner="fill_missing",
-                        activate=True
                     )
                 )
 
@@ -66,8 +62,6 @@ def scan_df_for_outliers(df: pd.DataFrame) -> List[ScanResult]:
                 row=idx,
                 col=-1,
                 message=f"Row {idx + 1} contains an outlier",
-                cleaner="outlier_removal",
-                activate=True
             )
         )
 

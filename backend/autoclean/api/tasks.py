@@ -170,8 +170,6 @@ def scan_import(self, args):
                     row=scan_result.row,
                     col=scan_result.col,
                     message=scan_result.message,
-                    cleaner=scan_result.cleaner,
-                    activate=scan_result.activate,
                     import_model=import_instance
                 )
 

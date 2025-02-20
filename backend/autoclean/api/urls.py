@@ -10,7 +10,7 @@ from drf_spectacular.views import SpectacularAPIView, SpectacularSwaggerView, Sp
 from api.views import (
     UserViewSet, ImportViewSet, ImportScanResultUpdateView, ImportScanResultBulkUpdateView,
     ImportUploadView,
-    TaskProgressRetrieveAPIView
+    TaskProgressRetrieveAPIView,
 )
 
 router = DefaultRouter()

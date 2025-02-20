@@ -39,9 +39,18 @@ class ImportScanResult(models.Model):
     row = models.IntegerField()
     col = models.IntegerField()
     message = models.CharField(max_length=255)
-    cleaner = models.CharField(max_length=255)
-    activate = models.BooleanField(default=False)
+    action_type = models.IntegerField(default=0)
     import_model = models.ForeignKey(Import, related_name="scan_results", on_delete=models.CASCADE)
+
+class ImportScanResultAction(models.Model):
+    id = models.AutoField(primary_key=True)
+    title = models.CharField(max_length=255)
+    description = models.CharField(max_length=255)
+    cleaner = models.CharField(max_length=255, null=True, blank=True)
+    cleaner_id = models.IntegerField(null=True, blank=True)
+    activate = models.BooleanField(default=False)
+    data = models.JSONField(null=True, blank=True)
+    import_scan_result = models.ForeignKey(ImportScanResult, related_name="actions", on_delete=models.CASCADE)
 
 class TaskProgress(models.Model):
     class Status(str, Enum):

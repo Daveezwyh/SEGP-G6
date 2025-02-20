@@ -70,7 +70,7 @@ class ImportDataSerializer(serializers.ModelSerializer):
 class ImportScanResultSerializer(serializers.ModelSerializer):
     class Meta:
         model = ImportScanResult
-        fields = ['id', 'row', 'col', 'message', 'cleaner', 'activate']
+        fields = ['id', 'row', 'col', 'message', 'action_type']
 
 class ImportScanResultUpdateSerializer(serializers.ModelSerializer):
     id = serializers.IntegerField(required=True)

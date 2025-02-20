@@ -27,6 +27,7 @@ class UserViewSet(viewsets.ModelViewSet):
 class TaskProgressRetrieveAPIView(generics.RetrieveAPIView):
     queryset = TaskProgress.objects.all()
     serializer_class = TaskProgressSerializer
+    # permission_classes = [IsAuthenticated]
     lookup_field = 'uuid'
 
     def get_object(self):
@@ -135,6 +136,9 @@ class ImportViewSet(viewsets.ReadOnlyModelViewSet):
         serializer = ImportDataSerializer(import_data, many=True)
         return Response(serializer.data)
     
+    @extend_schema(
+        responses={200: ImportScanResultSerializer(many=True)},
+    )
     @action(detail=True, methods=['get'], url_path='scan-results')
     def scan_results(self, request, pk=None):
         import_instance = self.get_object()
