@@ -1,9 +1,9 @@
 import { useState } from "react";
-import { MdOutlineFileUpload } from "react-icons/md";
-import { IoTimeOutline } from "react-icons/io5";
-import { IoIosLogOut } from "react-icons/io";
-import { GoSidebarExpand, GoSidebarCollapse } from "react-icons/go";
+import { GoSidebarCollapse, GoSidebarExpand } from "react-icons/go";
 import { HiUserCircle } from "react-icons/hi";
+import { IoIosLogOut } from "react-icons/io";
+import { IoTimeOutline } from "react-icons/io5";
+import { MdOutlineFileUpload } from "react-icons/md";
 
 export default function Sidebar() {
     const [isOpen, setIsOpen] = useState(false);
@@ -43,7 +43,7 @@ export default function Sidebar() {
                         <SidebarIcon icon = {<MdOutlineFileUpload size ="40" />} label="Upload File"/>
                         <SidebarIcon icon = {<IoTimeOutline size ="40" />} label="Recent Files"/>
                         <div className="mt-auto">
-                            <SidebarIcon icon = {<IoIosLogOut size ="40" onClick = {openLogout} label="Log Out"/>} />
+                            <SidebarIcon icon = {<IoIosLogOut size ="40" onClick = {openLogout} />} label="Log Out"/>
                         </div>
                     </>
                 )}
