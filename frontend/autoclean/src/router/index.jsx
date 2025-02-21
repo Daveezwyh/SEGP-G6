@@ -5,6 +5,7 @@ import Login from '../pages/Login';
 import Register from '../pages/Register';
 import Homepage from '../pages/Homepage';
 import ProgressBar from '../pages/Homepage/bars/ProgressBar';
+import InfoPage from '../pages/InfoPage/Information';
 
 import { AuthRoute } from '../components/AuthRoute';
 
@@ -24,6 +25,10 @@ const router = createBrowserRouter([
     {
         path: "/progressbar",
         element: <ProgressBar />
+    },
+    {
+        path: "/info",
+        element: <InfoPage />
     },
 ]);
 

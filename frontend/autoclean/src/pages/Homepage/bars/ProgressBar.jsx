@@ -26,7 +26,7 @@ export default function ProgressBar() {
     // Once progress reaches TOTAL_SEGMENTS, navigate back to homepage
     if (progress === TOTAL_SEGMENTS) {
       setTimeout(() => {
-        navigate("/homepage");
+        navigate("/info");
       }, 1000);
     }
   }, [progress, navigate]); // Runs when progress updates
