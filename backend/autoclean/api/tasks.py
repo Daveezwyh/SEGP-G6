@@ -2,7 +2,7 @@ from celery import shared_task
 import time, logging, os
 import pandas as pd
 
-from .models import TaskProgress, Import, ImportData, ImportDataOriginal, ImportScanResult
+from .models import TaskProgress, Import, ImportData, ImportDataOriginal, ImportScanResult, ImportScanResultAction
 from autoclean.utils import auto_read_csv_file_to_df, df_from_import_model
 from autoclean.scanners.manager import ScannerManager
 
@@ -166,12 +166,24 @@ def scan_import(self, args):
                 scan_results += scanner(df)
             
             for scan_result in scan_results:
-                ImportScanResult.objects.create(
+                import_scan_result = ImportScanResult.objects.create(
                     row=scan_result.row,
                     col=scan_result.col,
                     message=scan_result.message,
+                    action_type=scan_result.action_type.value,
                     import_model=import_instance
                 )
+
+                for action in scan_result.actions:
+                    ImportScanResultAction.objects.create(
+                        title=action.title,
+                        description=action.description,
+                        cleaner=action.cleaner,
+                        cleaner_id=action.cleaner_id,
+                        activate=action.activate,
+                        data=action.data,
+                        import_scan_result=import_scan_result
+                    )
 
             task_progress.status = TaskProgress.Status.COMPLETED.value
             task_progress.percentage = 100

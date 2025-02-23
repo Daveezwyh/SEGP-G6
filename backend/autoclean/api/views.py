@@ -13,10 +13,11 @@ from drf_spectacular.utils import extend_schema, OpenApiParameter, OpenApiTypes,
 from .serializers import (
     UserSerializer, UploadImportSerializer, ImportSerializer, ImportDataSerializer,
     ImportScanResultSerializer, ImportScanResultUpdateSerializer,
+    ImportScanResultActionSerializer,
     TaskProgressSerializer
 )
 from .tasks import read_file_to_import_data, copy_import_data_original, scan_import
-from .models import TaskProgress, Import, ImportData, ImportScanResult
+from .models import TaskProgress, Import, ImportData, ImportScanResult, ImportScanResultAction
 from autoclean.utils import AutocleanAPIPagination
 
 class UserViewSet(viewsets.ModelViewSet):
@@ -147,31 +148,31 @@ class ImportViewSet(viewsets.ReadOnlyModelViewSet):
         serializer = ImportScanResultSerializer(import_scan_results, many=True)
         return Response(serializer.data)
 
-class ImportScanResultUpdateView(APIView):
+class ImportScanResultActionUpdateView(APIView):
     permission_classes = [IsAuthenticated]
 
     @extend_schema(
-        request=ImportScanResultUpdateSerializer,
+        request=ImportScanResultActionSerializer,
         responses={
-            200: ImportScanResultSerializer,
+            200: ImportScanResultActionSerializer,
         },
-        description="Update a single Scan Result object.",
+        description="Update a single Import Scan Result Action object.",
         examples=[
             OpenApiExample(
                 "Valid PATCH Request",
-                value={"id": 1, "import_model_id": 5, "activate": False},
+                value={"id": 1, "import_scan_result_id": 5, "activate": False},
                 request_only=True
             ),
             OpenApiExample(
                 "Successful Response",
                 value={
                     "id": 1,
-                    "row": 10,
-                    "col": 3,
-                    "message": "Some scan result message",
+                    "title": "Fix Issue",
+                    "description": "This action fixes the issue",
                     "cleaner": "SomeCleaner",
+                    "cleaner_id": 3,
                     "activate": False,
-                    "import_model": 5
+                    "import_scan_result_id": 5
                 },
                 response_only=True
             )
@@ -180,18 +181,23 @@ class ImportScanResultUpdateView(APIView):
     def patch(self, request, *args, **kwargs):
         data = request.data
 
-        if not isinstance(data, dict) or "id" not in data or "import_model_id" not in data or "activate" not in data:
+        if not isinstance(data, dict) or "id" not in data or "import_scan_result_id" not in data or "activate" not in data:
             return Response({"error": "Invalid input data."}, status=status.HTTP_400_BAD_REQUEST)
 
         try:
-            instance = get_object_or_404(ImportScanResult, id=data["id"], import_model_id=data["import_model_id"])
-            
-            update_serializer = ImportScanResultUpdateSerializer(instance, data={"activate": data["activate"]}, partial=True)
+            instance = get_object_or_404(
+                ImportScanResultAction, 
+                id=data["id"], 
+                import_scan_result_id=data["import_scan_result_id"]
+            )
+
+            # Update only the 'activate' field
+            update_serializer = ImportScanResultActionSerializer(instance, data={"activate": data["activate"]}, partial=True)
 
             if update_serializer.is_valid():
                 update_serializer.save()
 
-                response_serializer = ImportScanResultSerializer(instance)
+                response_serializer = ImportScanResultActionSerializer(instance)
                 return Response(response_serializer.data, status=status.HTTP_200_OK)
 
             return Response(update_serializer.errors, status=status.HTTP_400_BAD_REQUEST)
@@ -199,15 +205,15 @@ class ImportScanResultUpdateView(APIView):
         except Exception as e:
             return Response({"error": str(e)}, status=status.HTTP_400_BAD_REQUEST)
 
-class ImportScanResultBulkUpdateView(APIView):
+class ImportScanResultActionBulkUpdateView(APIView):
     permission_classes = [IsAuthenticated]
 
     @extend_schema(
-        request=ImportScanResultUpdateSerializer(many=True),
+        request=ImportScanResultActionSerializer(many=True),
         responses={
             200: OpenApiResponse(
                 response=OpenApiTypes.OBJECT,
-                description="Successful bulk update of scan results.",
+                description="Successful bulk update of scan result actions.",
                 examples=[
                     OpenApiExample(
                         "Successful Response (200 OK)",
@@ -216,21 +222,21 @@ class ImportScanResultBulkUpdateView(APIView):
                             "updated": [
                                 {
                                     "id": 1,
-                                    "row": 10,
-                                    "col": 3,
-                                    "message": "Some scan result message",
+                                    "title": "Fix Issue",
+                                    "description": "This action fixes the issue",
                                     "cleaner": "SomeCleaner",
+                                    "cleaner_id": 3,
                                     "activate": True,
-                                    "import_model": 5
+                                    "import_scan_result_id": 5
                                 },
                                 {
                                     "id": 2,
-                                    "row": 12,
-                                    "col": 4,
-                                    "message": "Another scan result message",
+                                    "title": "Resolve Conflict",
+                                    "description": "Resolves data conflict",
                                     "cleaner": "SomeCleaner",
+                                    "cleaner_id": 7,
                                     "activate": False,
-                                    "import_model": 5
+                                    "import_scan_result_id": 5
                                 }
                             ]
                         },
@@ -248,12 +254,12 @@ class ImportScanResultBulkUpdateView(APIView):
                             "updated": [
                                 {
                                     "id": 2,
-                                    "row": 12,
-                                    "col": 4,
-                                    "message": "Another scan result message",
+                                    "title": "Resolve Conflict",
+                                    "description": "Resolves data conflict",
                                     "cleaner": "SomeCleaner",
+                                    "cleaner_id": 7,
                                     "activate": False,
-                                    "import_model": 5
+                                    "import_scan_result_id": 5
                                 }
                             ],
                             "errors": [{"id": 3, "error": "Not found."}]
@@ -263,7 +269,14 @@ class ImportScanResultBulkUpdateView(APIView):
                 ]
             ),
         },
-        description="Update a list of Scan Result objects.",
+        description="Bulk update a list of Import Scan Result Actions.",
+        examples=[
+            OpenApiExample(
+                "Valid PATCH Request",
+                value={"id": 1, "import_scan_result_id": 5, "activate": False},
+                request_only=True
+            )
+        ]
     )
     def patch(self, request, *args, **kwargs):
         data_list = request.data
@@ -275,20 +288,23 @@ class ImportScanResultBulkUpdateView(APIView):
         errors = []
 
         for data in data_list:
-            if "id" not in data or "import_model_id" not in data or "activate" not in data:
-                errors.append({"error": f"Missing 'id', 'import_model_id', or 'activate' in {data}"})
+            if "id" not in data or "import_scan_result_id" not in data or "activate" not in data:
+                errors.append({"error": f"Missing 'id', 'import_scan_result_id', or 'activate' in {data}"})
                 continue
 
             try:
-                instance = get_object_or_404(ImportScanResult, id=data["id"], import_model_id=data["import_model_id"])
+                instance = get_object_or_404(
+                    ImportScanResultAction, 
+                    id=data["id"], 
+                    import_scan_result_id=data["import_scan_result_id"]
+                )
 
-                update_serializer = ImportScanResultUpdateSerializer(instance, data={"activate": data["activate"]}, partial=True)
+                # Update only the 'activate' field
+                update_serializer = ImportScanResultActionSerializer(instance, data={"activate": data["activate"]}, partial=True)
 
                 if update_serializer.is_valid():
                     update_serializer.save()
-
-                    response_serializer = ImportScanResultSerializer(instance)
-                    updated_results.append(response_serializer.data)
+                    updated_results.append(update_serializer.data)
                 else:
                     errors.append({"id": data["id"], "error": update_serializer.errors})
 

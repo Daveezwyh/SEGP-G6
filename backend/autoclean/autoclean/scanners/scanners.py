@@ -1,4 +1,4 @@
-from autoclean.scanners.result import ScanResult, ScannerAttribute
+from autoclean.scanners.result import ScanResult, SRActionType, ScanResultAction
 import pandas as pd
 from typing import List
 from sklearn.ensemble import IsolationForest
@@ -13,6 +13,15 @@ def scan_df_for_duplicates(df: pd.DataFrame) -> List[ScanResult]:
                 row=index,
                 col=-1,  # No specific column as the entire row is duplicated
                 message=f"Row {index + 1} is duplicated",
+                action_type=SRActionType.ONE_MANDATORY,
+                actions=[
+                    ScanResultAction(
+                        title="Remove Duplicates",
+                        description="Remove the duplicated row",
+                        cleaner="remove_duplicates",
+                        activate=True,
+                    )
+                ]
             )
         )
 
