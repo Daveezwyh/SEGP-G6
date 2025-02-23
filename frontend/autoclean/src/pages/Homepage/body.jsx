@@ -4,7 +4,7 @@ import React, { useEffect, useRef, useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 
 export default function Body() {
-    const dropzoneRef = useRef(null);  
+    const dropzoneRef = useRef(null);
     const [fileAdded, setFileAdded] = useState(false);
     const navigate = useNavigate();
 
@@ -23,7 +23,7 @@ export default function Body() {
             }
         });
 
-        return () => dropzone.destroy(); 
+        return () => dropzone.destroy();
     }, []);
 
     const handleConfirmUpload = () => {
@@ -44,8 +44,8 @@ export default function Body() {
             <div
                 ref={dropzoneRef}
                 className="dropzone w-[75%] h-50 border-2 border-dashed border-gray-400 rounded-lg
-                        flex justify-center items-center text-gray-600 
-                        dark:border-gray-500 dark:text-cyan-400 
+                        flex justify-center items-center text-gray-600
+                        dark:border-gray-500 dark:text-cyan-400
                         hover:border-blue-500 hover:bg-gray-100 transition-all"
             ></div>
 
@@ -55,7 +55,7 @@ export default function Body() {
                 className="bg-main hover:bg-mainHover text-white rounded-2xl font-bold py-4 px-[30%] mt-4"
             >
                 Process
-            </button> 
+            </button>
         </div>
     );
 }
