@@ -9,11 +9,18 @@ def get_random_filename(instance, filename):
     return os.path.join('imports', random_filename)
 
 class Import(models.Model):
+    class Status(models.IntegerChoices):
+        NEW = 1, "New"
+        PROCESSING = 2, "Processing"
+        COMPLETED = 3, "Completed"
+        FAILED = 4, "Failed"
+    
     description = models.CharField(max_length=255)
     data = models.JSONField(null=True, blank=True)
     uploaded_at = models.DateTimeField(auto_now_add=True, null=True, blank=True)
     uploaded_by = models.ForeignKey(User, null=True, blank=True, on_delete=models.CASCADE)
     file = models.FileField(upload_to=get_random_filename, null=True, blank=True)
+    status = models.IntegerField(choices=Status.choices, default=Status.NEW)
 
     ALLOWED_CONTENT_TYPES = [
         'text/csv',

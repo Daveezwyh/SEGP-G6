@@ -53,14 +53,18 @@ class UploadImportSerializer(serializers.ModelSerializer):
 class ImportSerializer(serializers.ModelSerializer):
     uploaded_by = serializers.SerializerMethodField()
     file = serializers.CharField(write_only=True)
+    status_text = serializers.SerializerMethodField()
 
     class Meta:
         model = Import
-        fields = ['id', 'description', 'data', 'uploaded_at', 'uploaded_by', 'file']
-        read_only_fields = ['uploaded_at', 'uploaded_by', 'data']
-    
+        fields = ['id', 'status', 'status_text', 'description', 'data', 'uploaded_at', 'uploaded_by', 'file']
+        read_only_fields = ['status', 'status_text', 'uploaded_at', 'uploaded_by', 'data']
+
     def get_uploaded_by(self, obj) -> str:
         return obj.uploaded_by.username if obj.uploaded_by else None
+
+    def get_status_text(self, obj) -> str:
+        return obj.get_status_display()
 
 class ImportDataSerializer(serializers.ModelSerializer):
     class Meta:
@@ -78,12 +82,3 @@ class ImportScanResultSerializer(serializers.ModelSerializer):
     class Meta:
         model = ImportScanResult
         fields = ['id', 'row', 'col', 'message', 'action_type', 'actions']
-
-class ImportScanResultUpdateSerializer(serializers.ModelSerializer):
-    id = serializers.IntegerField(required=True)
-    import_model_id = serializers.IntegerField(required=True)
-    activate = serializers.BooleanField(required=True)
-
-    class Meta:
-        model = ImportScanResult
-        fields = ["id", "import_model_id", "activate"]

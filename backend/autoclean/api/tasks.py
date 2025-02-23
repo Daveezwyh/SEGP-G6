@@ -198,3 +198,53 @@ def scan_import(self, args):
 
     except Exception as e:
         logger.error(f"Error in task {self.name}: {str(e)}", exc_info=True)
+
+@shared_task(bind=True)
+def clean_import(self, args):
+    try:
+        task_progress_id = args["task_progress_id"]
+        import_id = args["import_id"]
+
+        import_instance = Import.objects.get(id=import_id)
+        task_progress = TaskProgress.objects.get(id=task_progress_id)
+
+        try:
+            import_instance.status = Import.Status.PROCESSING.value
+            import_instance.save()
+
+            task_progress.status = TaskProgress.Status.PROCESSING.value
+            task_progress.save()
+
+            df = df_from_import_model(import_instance.id)
+
+            imp_scan_results = import_instance.scan_results.all()
+
+            scan_result_actions = ImportScanResultAction.objects.filter(import_scan_result__in=imp_scan_results)
+
+            for action in scan_result_actions:
+                logger.info(
+                    f"ID: {action.id}, Title: {action.title}, Description: {action.description}, "
+                    f"Cleaner: {action.cleaner}, Cleaner ID: {action.cleaner_id}, "
+                    f"Activate: {action.activate}, Data: {action.data}"
+                )
+            
+            import_instance.status = Import.Status.COMPLETED.value
+            import_instance.save()
+
+            task_progress.status = TaskProgress.Status.COMPLETED.value
+            task_progress.percentage = 100
+            task_progress.message = "Cleaning process of import data completed."
+            task_progress.save()
+
+        except Exception as e:
+            task_progress.status = TaskProgress.Status.ERROR.value
+            task_progress.error = str(e)
+            task_progress.save()
+            raise
+
+    except Import.DoesNotExist:
+        logger.error(f"Import with ID {import_id} does not exist.", exc_info=True)
+        raise
+    except Exception as e:
+        logger.error(f"Error in task {self.name}: {str(e)}", exc_info=True)
+        raise
