@@ -8,14 +8,17 @@ import { MdOutlineFileUpload } from "react-icons/md";
 export default function Sidebar() {
     const [isOpen, setIsOpen] = useState(false);
     const [showLogout, setShowLogout] = useState(false);
+    const navigate = useNavigate();
 
     const toggleSidebar = () => {
         setIsOpen(prevState => !prevState);
     };
 
-    const openLogout = () => {
-        setShowLogout(true);
-    }
+    const handleLogout = () => {
+        localStorage.removeItem("access_token");
+        localStorage.removeItem("refresh_token");
+        navigate("/");
+    };
 
     const closeLogout = () => {
         setShowLogout(false);
@@ -62,7 +65,7 @@ export default function Sidebar() {
                             <button onClick={closeLogout} className="btn btn-secondary px-4">
                                 Cancel
                             </button>
-                            <button className="btn btn-danger px-4">
+                            <button onClick={handleLogout} className="btn btn-danger px-4">
                                 Log Out
                             </button>
                         </div>
