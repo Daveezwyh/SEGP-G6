@@ -6,7 +6,12 @@ interface
 
 - progress bar
 - make it pop up page  only?
+- connect with api endpoints
 
+information.jsx
+- items/data need to be change to table form
+- add header, footer and sidebar to info page
 
-- add blank box to upload data
-- think and create more features in interface
+token
+- fetch token automatically
+

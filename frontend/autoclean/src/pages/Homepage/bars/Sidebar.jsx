@@ -4,6 +4,7 @@ import { HiUserCircle } from "react-icons/hi";
 import { IoIosLogOut } from "react-icons/io";
 import { IoTimeOutline } from "react-icons/io5";
 import { MdOutlineFileUpload } from "react-icons/md";
+import { useNavigate } from "react-router-dom";
 
 export default function Sidebar() {
     const [isOpen, setIsOpen] = useState(false);
@@ -13,17 +14,19 @@ export default function Sidebar() {
     const toggleSidebar = () => {
         setIsOpen(prevState => !prevState);
     };
+    const openLogout = () => {
+        setShowLogout(true);
+    }
+    const closeLogout = () => {
+        setShowLogout(false);
+    }
 
     const handleLogout = () => {
         localStorage.removeItem("access_token");
         localStorage.removeItem("refresh_token");
         navigate("/");
     };
-
-    const closeLogout = () => {
-        setShowLogout(false);
-    }
-
+    
     return (
         <>
             {/* sidebar container */}

@@ -24,7 +24,7 @@ export default function Information() {
       method: "GET",
       headers: {
         "Content-Type": "application/json",
-        "Authorization": `Bearer eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJ0b2tlbl90eXBlIjoiYWNjZXNzIiwiZXhwIjoxNzQwMjg0MTQwLCJpYXQiOjE3NDAyODA1NDAsImp0aSI6IjBmZGVjMGJmOTRjMjQxOWJhMTNiZjgzY2M2OGMwODkxIiwidXNlcl9pZCI6MX0.4L-5tnj3c2GtoLNvJHn4wCmQCEXJvTW7s77BNLFoQc0`,
+        "Authorization": `Bearer eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJ0b2tlbl90eXBlIjoiYWNjZXNzIiwiZXhwIjoxNzQwMjk3ODM1LCJpYXQiOjE3NDAyOTQyMzUsImp0aSI6Ijg4M2JhYzczN2I2MjQ3ZDJhZjM5OGY4NDQxYjhhNWJiIiwidXNlcl9pZCI6MX0.W_xg3IkSYPBZGJWO_5Uh7UH9brGzxUH8OzQsubim35E`,
       },
     })
       .then((res) => {
@@ -101,7 +101,7 @@ export default function Information() {
 
           {!loading && !error && data.length > 0 ? (
             <ul>
-              {/* Hard coded, need to be change*/}
+              {/* =need to be change too table form*/}
               {data.map((item) => (
                 <li key={item.id} className="mb-2">
                   <strong>ID:</strong> {item.id} <br />
