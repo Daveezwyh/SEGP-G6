@@ -4,10 +4,12 @@ import { IoTimeOutline } from "react-icons/io5";
 import { IoIosLogOut } from "react-icons/io";
 import { GoSidebarExpand, GoSidebarCollapse } from "react-icons/go";
 import { HiUserCircle } from "react-icons/hi";
+import { useNavigate } from "react-router-dom";
 
 export default function Sidebar() {
     const [isOpen, setIsOpen] = useState(false);
     const[showLogout, setShowLogout] = useState(false);
+    const navigate = useNavigate();
 
     const toggleSidebar = () => {
         setIsOpen(prevState => !prevState);
@@ -21,6 +23,11 @@ export default function Sidebar() {
         setShowLogout(false);
     }
 
+    const handleLogout = () => {
+        localStorage.removeItem("access_token");
+        localStorage.removeItem("refresh_token");
+        navigate("/");
+    };
 
     return (
         <>
@@ -41,8 +48,8 @@ export default function Sidebar() {
                 )}
             </div>
             {showLogout && (
-            <div className="position-fixed top-0 start-0 w-100 h-100 d-flex justify-content-center align-items-center bg-dark bg-opacity-75">
-                <div className="card text-center shadow-lg p-4 bg-white text-blacks dark:bg-slate-700 dark:text-cyan-400">
+            <div className="position-fixed top-0 start-0 w-100 h-100 z-index:999 d-flex justify-content-center align-items-center bg-dark bg-opacity-75">
+                <div className="card text-center shadow-lg p-4  dark:bg-slate-700 dark:text-cyan-400">
                     <div className="card-body d-flex flex-column align-items-center">
                         <div className="mb-3">
                             <HiUserCircle size="100" className="text-gray-400 dark:text-white" />
@@ -53,8 +60,8 @@ export default function Sidebar() {
                             <button onClick={closeLogout} className="btn btn-secondary px-4">
                                 Cancel
                             </button>
-                            <button className="btn btn-danger px-4">
-                                Log Out
+                            <button onClick={handleLogout} className="btn btn-danger px-4">
+                                    Log Out
                             </button>
                         </div>
                     </div>
