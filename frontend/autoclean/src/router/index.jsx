@@ -1,9 +1,11 @@
 import React from 'react';
+import { createBrowserRouter } from 'react-router-dom';
+
 import Login from '../pages/Login';
 import Register from '../pages/Register';
 import Homepage from '../pages/Homepage';
+import InfoPage from '../pages/InfoPage/Information';
 
-import { createBrowserRouter } from 'react-router-dom';
 import { AuthRoute } from '../components/AuthRoute';
 
 const router = createBrowserRouter([
@@ -18,6 +20,10 @@ const router = createBrowserRouter([
     {
         path: "/homepage",
         element: <AuthRoute><Homepage /></AuthRoute>
+    },
+    {
+        path: "/info",
+        element: <AuthRoute><InfoPage /></AuthRoute>
     },
 ]);
 
