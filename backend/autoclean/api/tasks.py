@@ -2,9 +2,10 @@ from celery import shared_task
 import time, logging, os
 import pandas as pd
 
-from .models import TaskProgress, Import, ImportData, ImportDataOriginal, ImportScanResult, ImportScanResultAction
-from autoclean.utils import auto_read_csv_file_to_df, df_from_import_model
+from .models import TaskProgress, Import, ImportData, ImportDataOriginal, ImportScanResult, ImportScanResultAction, Cleaner
+from autoclean.utils import auto_read_csv_file_to_df, df_from_import_model, cleaner_fn_activate
 from autoclean.scanners.manager import ScannerManager
+from autoclean.scanners.result import ScanResult
 
 logger = logging.getLogger('django')
 
@@ -215,18 +216,26 @@ def clean_import(self, args):
             task_progress.status = TaskProgress.Status.PROCESSING.value
             task_progress.save()
 
-            df = df_from_import_model(import_instance.id)
+            df:pd.DataFrame = df_from_import_model(import_instance.id)
 
             imp_scan_results = import_instance.scan_results.all()
 
-            scan_result_actions = ImportScanResultAction.objects.filter(import_scan_result__in=imp_scan_results)
+            for imp_scan_result in imp_scan_results:
+                scan_result: ScanResult = imp_scan_result.transform()
 
-            for action in scan_result_actions:
-                logger.info(
-                    f"ID: {action.id}, Title: {action.title}, Description: {action.description}, "
-                    f"Cleaner: {action.cleaner}, Cleaner ID: {action.cleaner_id}, "
-                    f"Activate: {action.activate}, Data: {action.data}"
-                )
+                imp_actions = imp_scan_result.actions.all()
+
+                for imp_action in imp_actions:
+                    if imp_action.activate and imp_action.cleaner:
+                        cleaner = Cleaner.objects.filter(fn_name=imp_action.cleaner, status=1).first()
+
+                        if cleaner:
+                            #logger.info(f"{cleaner.definition}")
+                            cleaner_fn = cleaner_fn_activate(cleaner.definition)
+                            df:pd.DataFrame = cleaner_fn(scan_result, df)
+
+                        else:
+                            continue
             
             import_instance.status = Import.Status.COMPLETED.value
             import_instance.save()

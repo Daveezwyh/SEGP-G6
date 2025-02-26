@@ -3,6 +3,8 @@ from django.contrib.auth.models import User
 import os
 import uuid
 from enum import Enum
+from autoclean.scanners.result import ScanResult
+from autoclean.scanners.result import ScanResultAction
 
 def get_random_filename(instance, filename):
     random_filename = f"{uuid.uuid4()}.{filename.split('.')[-1]}"
@@ -49,6 +51,16 @@ class ImportScanResult(models.Model):
     action_type = models.IntegerField(default=0)
     import_model = models.ForeignKey(Import, related_name="scan_results", on_delete=models.CASCADE)
 
+    def transform(self):
+        scan_result = ScanResult(
+            row=self.row,
+            col=self.col,
+            message=self.message,
+            action_type=self.action_type,
+            actions=[action.transform() for action in self.actions.all()]
+        )
+        return scan_result
+
 class ImportScanResultAction(models.Model):
     id = models.AutoField(primary_key=True)
     title = models.CharField(max_length=255)
@@ -58,6 +70,16 @@ class ImportScanResultAction(models.Model):
     activate = models.BooleanField(default=False)
     data = models.JSONField(null=True, blank=True)
     import_scan_result = models.ForeignKey(ImportScanResult, related_name="actions", on_delete=models.CASCADE)
+
+    def transform(self):
+        return ScanResultAction(
+            title=self.title,
+            description=self.description,
+            cleaner=self.cleaner,
+            cleaner_id=self.cleaner_id,
+            activate=self.activate,
+            data=self.data
+        )
 
 class TaskProgress(models.Model):
     class Status(str, Enum):
@@ -82,3 +104,15 @@ class TaskProgress(models.Model):
     @staticmethod
     def makeUUID():
         return uuid.uuid4()
+
+class Cleaner(models.Model):
+    id = models.AutoField(primary_key=True)
+    fn_name = models.CharField(max_length=255, unique=True)
+    name = models.CharField(max_length=255, null=False, blank=False)
+    description = models.CharField(max_length=255, null=False, blank=False)
+    status = models.SmallIntegerField(default=0)
+    definition = models.TextField(null=False, blank=False)
+    data = models.JSONField(null=True, blank=True)
+
+    def __str__(self):
+        return self.name

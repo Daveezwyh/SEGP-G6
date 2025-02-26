@@ -1,8 +1,11 @@
 import pandas as pd
 import csv
 from rest_framework.pagination import PageNumberPagination
-
+from typing import Callable
+import ast
+import types
 from api.models import Import, ImportData
+from autoclean.scanners.result import ScanResult, ScanResultAction
 
 def auto_read_csv_file_to_df(file_path) -> pd.DataFrame:
     with open(file_path, 'r') as f:
@@ -52,3 +55,50 @@ class AutocleanAPIPagination(PageNumberPagination):
     page_size = 10
     page_size_query_param = 'page_size'
     max_page_size = 100
+
+def cleaner_fn_activate(func_string: str) -> Callable:
+    """
+    Parses, validates, and activates a function from a string, ensuring necessary imports exist.
+    
+    Args:
+        func_string (str): The function definition as a string.
+
+    Returns:
+        Callable: The extracted function if valid, else raises an error.
+    """
+    try:
+        # Parse the string into an AST (Abstract Syntax Tree)
+        parsed_code = ast.parse(func_string)
+
+        # Find all function definitions
+        func_defs = [node for node in parsed_code.body if isinstance(node, ast.FunctionDef)]
+
+        # Ensure there's exactly one function
+        if len(func_defs) != 1:
+            raise ValueError("The input must contain exactly one function definition.")
+
+        # Extract function name
+        func_name = func_defs[0].name
+
+        # Execution Namespace (Inject necessary imports)
+        execution_namespace = {
+            "ScanResult": ScanResult,  # Inject ScanResult
+            "ScanResultAction": ScanResultAction,  # Inject ScanResult.Action
+            "pandas": pd,              # Inject pandas (allows `pandas.DataFrame`)
+            "pd": pd,                   # Allow both `pandas` and `pd`
+        }
+
+        # Execute in the caller's namespace, including ScanResult and pandas
+        exec(func_string, execution_namespace)
+
+        # Retrieve the function
+        func = execution_namespace.get(func_name)
+
+        # Ensure it's actually a function
+        if not isinstance(func, types.FunctionType):
+            raise ValueError("Extracted object is not a function.")
+
+        return func
+
+    except SyntaxError as e:
+        raise ValueError(f"Invalid Python syntax: {e}")

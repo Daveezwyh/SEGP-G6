@@ -9,23 +9,26 @@ class UserSeeder:
         print(f'Users seeded successfully.\n')
     
     def createsuperuser(self):
-        superuser = User.objects.create_user(
-            username='root',
-            email='root@email.com',
-            password='password',
-            is_staff=True,
-            is_superuser=True
+        if User.objects.filter(username="root").exists():
+            print("\nSuperuser 'root' already exists. Skipping creation.")
+            return
+
+        User.objects.create_superuser(
+            username="root",
+            email="root@email.com",
+            password="password"
         )
+        print("Superuser 'root' created successfully.")
 
     def create(self):
         faker = Faker()
         username = faker.user_name()
         email = faker.email()
-        password = 'password'
+        password = "password"
         first_name = faker.first_name()
         last_name = faker.last_name()
 
-        user = User.objects.create_user(
+        User.objects.create_user(
             username=username,
             email=email,
             password=password,
