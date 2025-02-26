@@ -45,7 +45,7 @@ export default function Body() {
         return () => dz.destroy();
     }, []);    
 
-    const checkProgress = async (uuid) => {
+    const checkProgress = async (uuid, importId) => {
         try {
             const response = await axios.get(`http://35.213.150.144:8000/api/task-progress/${uuid}`, {
                 headers: {
@@ -66,12 +66,12 @@ export default function Body() {
             if (serverProgress >= 100) {
                 console.log("✅ Upload complete, waiting 1s before navigating...");
                 setTimeout(() => {
-                    navigate("/info");
+                    navigate(`/info?importId=${importId}`);
                 }, 1000);
                 return;
             }
     
-            setTimeout(() => checkProgress(uuid), 2000);
+            setTimeout(() => checkProgress(uuid, importId), 2000);
         } catch (error) {
             console.error("❌ Progress check failed:", error);
         }
@@ -102,10 +102,11 @@ export default function Body() {
             console.log("✅ Server Response:", response.data);
     
             const taskUUID = response.data.task_progress_uuid;
+            const importId = response.data.id;
     
             if (taskUUID) {
                 setTaskUUID(taskUUID);
-                checkProgress(taskUUID);
+                checkProgress(taskUUID, importId);
             } else {
                 alert("❌ Upload successful, but the backend did not return a task ID!");
                 console.error("❌ Server response:", response.data);
