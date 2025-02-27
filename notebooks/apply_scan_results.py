@@ -47,6 +47,9 @@ def apply_scan_results(df: pd.DataFrame, scan_results: List[ScanResult]) -> pd.D
             elif result.method == "label_encoding":
                 le = LabelEncoder()
                 df[col] = le.fit_transform(df[col].astype(str))
+            elif result.method == "drop":
+                columns_to_drop = [df.columns[col] for col in columns_to_drop]
+                return df.drop(columns=columns_to_drop, errors='ignore')
     
     df.reset_index(drop=True, inplace=True)  # Reset index after deletions
     return df

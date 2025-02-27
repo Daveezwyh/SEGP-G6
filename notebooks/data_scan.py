@@ -17,7 +17,7 @@ class ScanResult:
 
 def scan_df_for_duplicates(df: pd.DataFrame) -> List[ScanResult]:
     scan_results = []
-    duplicated_rows = df[df.duplicated(keep=False)]
+    duplicated_rows = df[df.duplicated(keep="first")]
 
     for index in duplicated_rows.index:
         for method in {"delete","keep"}:
@@ -169,7 +169,7 @@ def scan_df_for_categorical(df: pd.DataFrame,
             if len(categories) > 10:
                 categories_str += f"... (Total {len(categories)} categories)"
             
-            for method in {"one_hot", "label_encoding"}:
+            for method in {"one_hot", "label_encoding", "drop", "keep"}:
                 scan_results.append(
                     ScanResult(
                         row=-1,  # -1 indicates that the entire column needs processing
