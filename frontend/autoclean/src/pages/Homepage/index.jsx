@@ -5,6 +5,7 @@ import Footer from "./footer.jsx"
 import Body from "./body.jsx"
 import Sidebar from './bars/Sidebar.jsx';
 import React from 'react';
+
 export default function Homepage() {
     return (
         <div className="min-h-screen dark:bg-gray-700">
