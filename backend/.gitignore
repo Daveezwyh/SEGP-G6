@@ -50,9 +50,6 @@ staticfiles/
 static/
 live/
 
-# Migrations
-migrations/
-
 # PyCharm specific
 .idea/
 
@@ -100,10 +97,6 @@ test_results/
 # Bandit (security linting)
 .bandit/
 
-# Docker
-docker-compose*.yml
-Dockerfile
-
 # Heroku
 Procfile
 
@@ -116,3 +109,11 @@ Procfile
 # Cache
 *.cache
 .cache/
+
+# Celery related files
+celerybeat-schedule
+celerybeat-schedule.db
+celerybeat.pid
+
+logs/
+uploads/
