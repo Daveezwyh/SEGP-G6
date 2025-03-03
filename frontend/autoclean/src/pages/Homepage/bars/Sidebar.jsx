@@ -26,6 +26,10 @@ export default function Sidebar() {
         localStorage.removeItem("refresh_token");
         navigate("/");
     };
+
+    const handleNavigateToHome=() => {
+        navigate("/Homepage");
+    }
     
     return (
         <>
@@ -46,7 +50,7 @@ export default function Sidebar() {
                 {isOpen && (
                     <>
                         <SidebarIcon icon = {<GoSidebarExpand size ="40" onClick={toggleSidebar} />} label="Close"/>
-                        <SidebarIcon icon = {<MdOutlineFileUpload size ="40" />} label="Upload File"/>
+                        <SidebarIcon icon = {<MdOutlineFileUpload size ="40" onClick={handleNavigateToHome}/>} label="Upload File"/>
                         <SidebarIcon icon = {<IoTimeOutline size ="40" />} label="Recent Files"/>
                         <div className="mt-auto">
                             <SidebarIcon icon = {<IoIosLogOut size ="40" onClick = {openLogout} />} label="Log Out"/>
