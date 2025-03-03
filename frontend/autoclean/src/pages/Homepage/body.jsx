@@ -43,7 +43,7 @@ export default function Body() {
     
         setDropzoneInstance(dz);
         return () => dz.destroy();
-    }, []);    
+    }, []);
 
     const checkProgress = async (uuid, importId) => {
         try {

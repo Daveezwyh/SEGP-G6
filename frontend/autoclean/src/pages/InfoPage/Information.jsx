@@ -4,6 +4,10 @@ import { useSelector } from "react-redux";
 import { useLocation } from "react-router-dom";
 import { getToken } from "../../utils";
 
+import Header from "../Homepage/Header.jsx"
+import Sidebar from "../Homepage/bars/Sidebar.jsx"
+import Footer from "../Homepage/footer.jsx"
+
 export default function Information() {
   const token = useSelector((state) => state.user.token) || getToken();
   const location = useLocation();
@@ -76,7 +80,9 @@ export default function Information() {
   };
 
   return (
-    <div className="min-h-screen bg-gray-100 p-6 dark:bg-gray-900 dark:text-white">
+    <div className="min-h-screen bg-gray-100 dark:bg-gray-900 dark:text-white">
+      <Header />
+      <div className="p-10">
       <h1 className="text-xl font-bold mb-4">Information Page</h1>
       <div className="bg-white dark:bg-gray-800 rounded-lg shadow p-4 md:p-6 text-black dark:text-gray-200">
         <div className="mb-4 flex flex-wrap items-center gap-3">
@@ -136,8 +142,11 @@ export default function Information() {
             >
               <IoChevronForwardSharp size={18} />
             </button>
+            </div>
           </div>
         </div>
+        <Footer />
+        <Sidebar />
       </div>
     </div>
   );
