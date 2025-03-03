@@ -5,6 +5,7 @@ import Login from '../pages/Login';
 import Register from '../pages/Register';
 import Homepage from '../pages/Homepage';
 import InfoPage from '../pages/InfoPage/Information';
+import InfoDetails from "../pages/InfoPage/InfoDetails";
 
 import { AuthRoute } from '../components/AuthRoute';
 
@@ -25,6 +26,10 @@ const router = createBrowserRouter([
         path: "/info",
         element: <AuthRoute><InfoPage /></AuthRoute>
     },
+    {
+        path: "/info/:id",
+        element: <AuthRoute><InfoDetails /></AuthRoute>
+    }
 ]);
 
 export default router;
