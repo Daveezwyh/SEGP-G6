@@ -10,7 +10,8 @@ interface
 
 information.jsx
 - items/data need to be change to table form
-- add header, footer and sidebar to info page
+- add back button
+- navigate the upload file button back to homepage
 
 token
 - fetch token automatically

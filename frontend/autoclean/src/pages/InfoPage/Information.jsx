@@ -107,24 +107,44 @@ export default function Information() {
             />
           </div>
         </div>
-        <div className="bg-gray-200 dark:bg-gray-700 w-full min-h-[10rem] rounded p-4 mb-4">
-          {loading && <p>Loading...</p>}
-          {error && <p className="text-red-500">Error: {error}</p>}
-          {!loading && !error && data.length > 0 ? (
-            <ul>
-              {data.map((item) => (
-                <li key={item.id} className="mb-2">
-                  <strong>ID:</strong> {item.id} <br />
-                  <strong>Name:</strong> {item.data?.Name || "N/A"} <br />
-                  <strong>Age:</strong> {item.data?.Age || "N/A"} <br />
-                  <strong>Salary:</strong> {item.data?.Salary || "N/A"}
-                </li>
-              ))}
-            </ul>
-          ) : (
-            <p>No data available.</p>
-          )}
-        </div>
+        <div className="overflow-x-auto">
+            <table className="min-w-full border-collapse border border-gray-300">
+              <thead className="bg-gray-100 dark:bg-gray-700">
+                <tr>
+                  <th className="border px-4 py-2">ID</th>
+                  <th className="border px-4 py-2">Name</th>
+                  <th className="border px-4 py-2">Age</th>
+                  <th className="border px-4 py-2">Salary</th>
+                </tr>
+              </thead>
+              <tbody>
+                {loading && (
+                  <tr>
+                    <td colSpan="4" className="text-center py-4">Loading...</td>
+                  </tr>
+                )}
+                {error && (
+                  <tr>
+                    <td colSpan="4" className="text-center py-4 text-red-500">Error: {error}</td>
+                  </tr>
+                )}
+                {!loading && !error && data.length > 0 ? (
+                  data.map((item) => (
+                    <tr key={item.id} className="even:bg-gray-100 dark:even:bg-gray-700">
+                      <td className="border px-4 py-2">{item.id}</td>
+                      <td className="border px-4 py-2">{item.data?.Name || "N/A"}</td>
+                      <td className="border px-4 py-2">{item.data?.Age || "N/A"}</td>
+                      <td className="border px-4 py-2">{item.data?.Salary || "N/A"}</td>
+                    </tr>
+                  ))
+                ) : (
+                  <tr>
+                    <td colSpan="4" className="text-center py-4">No data available.</td>
+                  </tr>
+                )}
+              </tbody>
+            </table>
+          </div>
         <div className="flex justify-end items-center">
           <div className="flex items-center bg-gray-600 text-white rounded-full px-3 py-2 space-x-3">
             <button
