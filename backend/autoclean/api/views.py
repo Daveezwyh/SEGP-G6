@@ -111,9 +111,10 @@ class ImportUploadView(APIView):
         return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
 
 class ImportViewSet(viewsets.ReadOnlyModelViewSet):
-    queryset = Import.objects
+    queryset = Import.objects.all()
     serializer_class = ImportSerializer
     permission_classes = [IsAuthenticated]
+    pagination_class = AutocleanAPIPagination
 
     @extend_schema(
         parameters=[
@@ -211,6 +212,9 @@ class ImportViewSet(viewsets.ReadOnlyModelViewSet):
         except Import.DoesNotExist:
             return Response({"error": "Import instance not found."}, status=status.HTTP_404_NOT_FOUND)
         
+        if import_instance.status != Import.Status.NEW:
+            return Response({"error": "Import has already been processed."}, status=status.HTTP_400_BAD_REQUEST)
+
         task_progress = TaskProgress(
             uuid=TaskProgress.makeUUID(),
             status=TaskProgress.Status.PENDING.value,

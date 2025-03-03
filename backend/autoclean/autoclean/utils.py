@@ -29,6 +29,37 @@ def auto_read_csv_file_to_df(file_path) -> pd.DataFrame:
     
     raise ValueError("Could not determine the delimiter for the CSV file.")
 
+def save_import_data_from_df(import_instance: Import, df: pd.DataFrame) -> None:
+    if not isinstance(import_instance, Import):
+        raise TypeError(f"Expected 'import_instance' to be an instance of Import, got {type(import_instance)}")
+
+    if not isinstance(df, pd.DataFrame):
+        raise TypeError(f"Expected 'df' to be a pandas DataFrame, got {type(df)}")
+
+    if df.empty:
+        raise Exception("The provided DataFrame is empty and cannot be processed.")
+    
+    headers = df.columns.tolist()
+    total_rows = len(df)
+
+    current_data = import_instance.data or {}
+    current_data.update({'headers': headers, 'total_rows': total_rows})
+    import_instance.data = current_data
+    import_instance.save()
+
+    ImportData.objects.filter(import_model=import_instance).delete()
+
+    import_data_objects = [
+        ImportData(import_model=import_instance, data={
+            header: (value if pd.notnull(value) else None)
+            for header, value in zip(headers, row)
+        })
+        for row in df.itertuples(index=False, name=None)
+    ]
+
+    if import_data_objects:
+        ImportData.objects.bulk_create(import_data_objects)
+
 def df_from_import_model(import_id: int) -> pd.DataFrame:
     try:
         import_instance = Import.objects.get(id=import_id)

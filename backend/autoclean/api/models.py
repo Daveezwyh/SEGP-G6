@@ -24,6 +24,9 @@ class Import(models.Model):
     file = models.FileField(upload_to=get_random_filename, null=True, blank=True)
     status = models.IntegerField(choices=Status.choices, default=Status.NEW)
 
+    class Meta:
+        ordering = ["id"]
+    
     ALLOWED_CONTENT_TYPES = [
         'text/csv',
         'application/vnd.ms-excel',

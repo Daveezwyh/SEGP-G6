@@ -3,7 +3,7 @@ import time, logging, os
 import pandas as pd
 
 from .models import TaskProgress, Import, ImportData, ImportDataOriginal, ImportScanResult, ImportScanResultAction, Cleaner
-from autoclean.utils import auto_read_csv_file_to_df, df_from_import_model, cleaner_fn_activate
+from autoclean.utils import auto_read_csv_file_to_df, df_from_import_model, cleaner_fn_activate, save_import_data_from_df
 from autoclean.scanners.manager import ScannerManager
 from autoclean.scanners.result import ScanResult
 
@@ -72,29 +72,11 @@ def read_file_to_import_data(self, args):
                     logger.error(f"Unexpected error reading the file at {file_path}: {str(e)}", exc_info=True)
                     raise ValueError("An unexpected error occurred while reading the file.")
                 
-                headers = df.columns.tolist()
-
-                current_data = import_instance.data or {}
-
-                current_data.update({
-                    'headers': headers,
-                    'total_rows': len(df)
-                })
-                
-                import_instance.data = current_data
-                import_instance.save()
-
-                for row in df.itertuples(index=False, name=None):
-                    row_data = {header: (value if pd.notnull(value) else None) for header, value in zip(headers, row)}
-                    
-                    try:
-                        ImportData.objects.create(
-                            import_model=import_instance,
-                            data=row_data
-                        )
-                    except Exception as e:
-                        logger.error(f"Error creating ImportData: {row_data}, error: {str(e)}", exc_info=True)
-                        raise
+                try:
+                    save_import_data_from_df(import_instance, df)
+                except Exception as e:
+                    logger.error(f"Error saving import data from DataFrame: {str(e)}", exc_info=True)
+                    raise
 
                 return args
             else:
@@ -218,6 +200,9 @@ def clean_import(self, args):
 
             df:pd.DataFrame = df_from_import_model(import_instance.id)
 
+            if df.empty:
+                raise ValueError("The DataFrame is empty and cannot be cleaned.")
+
             imp_scan_results = import_instance.scan_results.all()
 
             for imp_scan_result in imp_scan_results:
@@ -236,6 +221,8 @@ def clean_import(self, args):
 
                         else:
                             continue
+            
+            save_import_data_from_df(import_instance, df)
             
             import_instance.status = Import.Status.COMPLETED.value
             import_instance.save()
