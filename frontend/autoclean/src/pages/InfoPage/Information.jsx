@@ -4,6 +4,10 @@ import { getToken } from "../../utils";
 import { FaChevronUp, FaChevronDown } from "react-icons/fa";
 import { useNavigate } from "react-router-dom";
 
+import Header from "../Homepage/Header";
+import Sidebar from "../Homepage/bars/Sidebar";
+import Footer from "../Homepage/footer";
+
 export default function Information() {
   const token = useSelector((state) => state.user.token) || getToken();
   const [data, setData] = useState([]);
@@ -99,7 +103,11 @@ export default function Information() {
   };
 
   return (
-    <div className="min-h-screen bg-gray-100 p-6 dark:bg-gray-900 dark:text-white">
+    <div className="min-h-screen bg-gray-100 dark:bg-gray-900 dark:text-white">
+      <Header />
+      <div className="flex">
+      <Sidebar />
+      <div className="flex-1 p-9 bg-white dark:bg-gray-800 rounded-lg shadow-md">
       <h1 className="text-xl font-bold mb-4">Information Page</h1>
 
       {/* Search */}
@@ -111,14 +119,6 @@ export default function Information() {
           onChange={(e) => setSearchId(e.target.value)}
           className="p-2 border rounded w-full md:w-1/3 text-black"
         />
-        <div className="flex flex-col">
-          <button onClick={incrementSearchId} className="p-1 bg-gray-300 dark:bg-gray-700 rounded">
-            <FaChevronUp />
-          </button>
-          <button onClick={decrementSearchId} className="p-1 bg-gray-300 dark:bg-gray-700 rounded mt-1">
-            <FaChevronDown />
-          </button>
-        </div>
       </div>
 
       {/* Page Size */}
@@ -134,53 +134,6 @@ export default function Information() {
           className="p-2 border rounded w-20 text-black"
           min="1"
         />
-      </div>
-
-      {/* Page Navigation */}
-      <div className="mb-4 flex items-center space-x-2">
-        <button
-          onClick={() => setPage((prev) => Math.max(prev - 1, 1))}
-          disabled={page === 1}
-          className="px-4 py-2 bg-gray-300 dark:bg-gray-700 rounded disabled:opacity-50"
-        >
-          Previous Page
-        </button>
-        {getPageNumbers().map((num, index) => (
-          <button
-            key={index}
-            onClick={() => typeof num === "number" && setPage(num)}
-            className={`px-3 py-1 rounded ${num === page ? "bg-blue-500 text-white" : "bg-gray-300 dark:bg-gray-700"}`}
-            disabled={num === "..."}
-          >
-            {num}
-          </button>
-        ))}
-        <button
-          onClick={() => setPage((prev) => prev + 1)}
-          disabled={page === totalPages}
-          className="px-4 py-2 bg-gray-300 dark:bg-gray-700 rounded"
-        >
-          Next Page
-        </button>
-        <span>Jump to Page:</span>
-        <input
-          type="number"
-          value={inputPage}
-          onChange={(e) => setInputPage(e.target.value)}
-          className="p-2 border rounded w-24 text-black"
-          min="1"
-          max={totalPages}
-          placeholder="Page Number"
-        />
-        <button
-          onClick={() => {
-            const newPage = parseInt(inputPage);
-            if (!isNaN(newPage) && newPage > 0 && newPage <= totalPages) setPage(newPage);
-          }}
-          className="px-4 py-2 bg-blue-500 text-white rounded"
-        >
-          Go
-        </button>
       </div>
 
       {/* Data */}
@@ -210,6 +163,62 @@ export default function Information() {
           )}
         </div>
       </div>
+
+      {/* Page Navigation */}
+      <div className="mt-12 flex items-center justify-between">
+        <div className="flex items-center space-x-2">
+        <button
+          onClick={() => setPage((prev) => Math.max(prev - 1, 1))}
+          disabled={page === 1}
+          className="px-4 py-2 bg-gray-300 dark:bg-gray-700 rounded disabled:opacity-50"
+        >
+          {'<'}
+        </button>
+        {getPageNumbers().map((num, index) => (
+          <button
+            key={index}
+            onClick={() => typeof num === "number" && setPage(num)}
+            className={`px-3 py-1 rounded ${num === page ? "bg-blue-500 text-white" : "bg-gray-300 dark:bg-gray-700"}`}
+            disabled={num === "..."}
+          >
+            {num}
+          </button>
+        ))}
+        <button
+          onClick={() => setPage((prev) => prev + 1)}
+          disabled={page === totalPages}
+          className="px-4 py-2 bg-gray-300 dark:bg-gray-700 rounded"
+        >
+          {'>'}
+        </button>
+        </div>
+        
+        {/* jump to page */}
+        <div className="flex items-center space-x-2 ml-auto">
+        <span>Jump to Page:</span>
+        <input
+          type="number"
+          value={inputPage}
+          onChange={(e) => setInputPage(e.target.value)}
+          className="p-2 border rounded w-24 text-black"
+          min="1"
+          max={totalPages}
+          placeholder="Page Number"
+        />
+        <button
+          onClick={() => {
+            const newPage = parseInt(inputPage);
+            if (!isNaN(newPage) && newPage > 0 && newPage <= totalPages) setPage(newPage);
+          }}
+          className="px-4 py-2 bg-blue-500 text-white rounded"
+        >
+          Go
+        </button>
+      </div>
+      </div>
+      </div>
+      </div>
+      <Footer />
     </div>
   );
 }
