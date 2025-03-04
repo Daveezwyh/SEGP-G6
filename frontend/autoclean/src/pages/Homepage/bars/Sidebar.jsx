@@ -30,6 +30,10 @@ export default function Sidebar() {
     const handleNavigateToHome=() => {
         navigate("/Homepage");
     }
+
+    const handleNavigateRecentFiles=() => {
+        navigate("/info");
+    }
     
     return (
         <>
@@ -51,7 +55,7 @@ export default function Sidebar() {
                     <>
                         <SidebarIcon icon = {<GoSidebarExpand size ="40" onClick={toggleSidebar} />} label="Close"/>
                         <SidebarIcon icon = {<MdOutlineFileUpload size ="40" onClick={handleNavigateToHome}/>} label="Upload File"/>
-                        <SidebarIcon icon = {<IoTimeOutline size ="40" />} label="Recent Files"/>
+                        <SidebarIcon icon = {<IoTimeOutline size ="40" onClick={handleNavigateRecentFiles}/>} label="Recent Files"/>
                         <div className="mt-auto">
                             <SidebarIcon icon = {<IoIosLogOut size ="40" onClick = {openLogout} />} label="Log Out"/>
                         </div>
