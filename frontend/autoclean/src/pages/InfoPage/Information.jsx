@@ -1,25 +1,16 @@
 import React, { useEffect, useState } from "react";
-import { IoChevronBackSharp, IoChevronForwardSharp } from "react-icons/io5";
 import { useSelector } from "react-redux";
-import { useLocation } from "react-router-dom";
 import { getToken } from "../../utils";
-
-import Header from "../Homepage/Header.jsx"
-import Sidebar from "../Homepage/bars/Sidebar.jsx"
-import Footer from "../Homepage/footer.jsx"
+import { FaChevronUp, FaChevronDown } from "react-icons/fa";
+import { useNavigate } from "react-router-dom";
 
 export default function Information() {
   const token = useSelector((state) => state.user.token) || getToken();
-  const location = useLocation();
-  const queryParams = new URLSearchParams(location.search);
-  const importId = queryParams.get("importId") || 1;
-
-  const [page, setPage] = useState(1);
-  const [pageSize, setPageSize] = useState(2);
-  const [totalPages, setTotalPages] = useState(1);
   const [data, setData] = useState([]);
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState(null);
+  const [searchId, setSearchId] = useState("");
+  const navigate = useNavigate();
 
   const fetchData = () => {
     setLoading(true);
@@ -31,7 +22,7 @@ export default function Information() {
       return;
     }
 
-    const url = `http://35.213.150.144:8000/api/imports/${importId}/data/?page=${page}&page_size=${pageSize}`;
+    const url = `http://35.213.150.144:8000/api/imports/`;
 
     fetch(url, {
       method: "GET",
@@ -53,8 +44,8 @@ export default function Information() {
         return res.json();
       })
       .then((json) => {
-        setData(json.results || []);
-        setTotalPages(Math.ceil(json.count / pageSize));
+        console.log("API Response:", json);
+        setData(json || []);
         setLoading(false);
       })
       .catch((err) => {
@@ -65,108 +56,65 @@ export default function Information() {
 
   useEffect(() => {
     fetchData();
-  }, [importId, page, pageSize]);
+  }, []);
 
-  const handlePrevPage = () => {
-    if (page > 1) {
-      setPage(page - 1);
-    }
+  const filteredData = searchId
+    ? data.filter((item) => item.id.toString() === searchId)
+    : data;
+
+  const incrementSearchId = () => {
+    setSearchId((prev) => (prev ? (parseInt(prev) + 1).toString() : "1"));
   };
 
-  const handleNextPage = () => {
-    if (page < totalPages) {
-      setPage(page + 1);
-    }
+  const decrementSearchId = () => {
+    setSearchId((prev) => (prev && parseInt(prev) > 1 ? (parseInt(prev) - 1).toString() : ""));
   };
 
   return (
-    <div className="min-h-screen bg-gray-100 dark:bg-gray-900 dark:text-white">
-      <Header />
-      <div className="p-10">
+    <div className="min-h-screen bg-gray-100 p-6 dark:bg-gray-900 dark:text-white">
       <h1 className="text-xl font-bold mb-4">Information Page</h1>
+      <div className="mb-4 flex items-center space-x-2">
+        <input
+          type="text"
+          placeholder="Search by ID"
+          value={searchId}
+          onChange={(e) => setSearchId(e.target.value)}
+          className="p-2 border rounded w-full md:w-1/3 text-black"
+        />
+        <div className="flex flex-col">
+          <button onClick={incrementSearchId} className="p-1 bg-gray-300 dark:bg-gray-700 rounded">
+            <FaChevronUp />
+          </button>
+          <button onClick={decrementSearchId} className="p-1 bg-gray-300 dark:bg-gray-700 rounded mt-1">
+            <FaChevronDown />
+          </button>
+        </div>
+      </div>
       <div className="bg-white dark:bg-gray-800 rounded-lg shadow p-4 md:p-6 text-black dark:text-gray-200">
-        <div className="mb-4 flex flex-wrap items-center gap-3">
-          <div className="hidden">
-            <label className="text-sm font-semibold mb-1">Import ID</label>
-            <span className="border p-1 rounded bg-gray-200 dark:bg-gray-700">{importId}</span>
-          </div>
-          <div className="flex flex-col">
-            <label className="text-sm font-semibold mb-1">Page Size</label>
-            <input
-              type="number"
-              className="border p-1 rounded"
-              value={pageSize}
-              onChange={(e) => {
-                const newSize = Number(e.target.value);
-                if (newSize > 0) {
-                  setPageSize(newSize);
-                  setPage(1);
-                }
-              }}
-              min="1"
-            />
-          </div>
+        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
+          {loading && <p>Loading...</p>}
+          {error && <p className="text-red-500">Error: {error}</p>}
+          {!loading && !error && filteredData.length > 0 ? (
+            filteredData.map((item) => (
+              <div key={item.id} className="bg-gray-200 dark:bg-gray-700 rounded-lg p-4 shadow-md">
+                <strong>ID:</strong> {item.id} <br />
+                <strong>Description:</strong> {item.description || "N/A"} <br />
+                <strong>Filename:</strong> {item.data?.filename || "N/A"} <br />
+                <strong>Total Rows:</strong> {item.data?.total_rows || 0} <br />
+                <strong>Uploaded By:</strong> {item.uploaded_by || "Unknown"} <br />
+                <strong>Uploaded At:</strong> {new Date(item.uploaded_at).toLocaleString()} <br />
+                <button
+                  onClick={() => navigate(`/info/${item.id}`)}
+                  className="mt-2 px-4 py-2 bg-blue-500 text-white rounded"
+                >
+                  View
+                </button>
+              </div>
+            ))
+          ) : (
+            <p>No data available.</p>
+          )}
         </div>
-        <div className="overflow-x-auto">
-            <table className="min-w-full border-collapse border border-gray-300">
-              <thead className="bg-gray-100 dark:bg-gray-700">
-                <tr>
-                  <th className="border px-4 py-2">ID</th>
-                  <th className="border px-4 py-2">Name</th>
-                  <th className="border px-4 py-2">Age</th>
-                  <th className="border px-4 py-2">Salary</th>
-                </tr>
-              </thead>
-              <tbody>
-                {loading && (
-                  <tr>
-                    <td colSpan="4" className="text-center py-4">Loading...</td>
-                  </tr>
-                )}
-                {error && (
-                  <tr>
-                    <td colSpan="4" className="text-center py-4 text-red-500">Error: {error}</td>
-                  </tr>
-                )}
-                {!loading && !error && data.length > 0 ? (
-                  data.map((item) => (
-                    <tr key={item.id} className="even:bg-gray-100 dark:even:bg-gray-700">
-                      <td className="border px-4 py-2">{item.id}</td>
-                      <td className="border px-4 py-2">{item.data?.Name || "N/A"}</td>
-                      <td className="border px-4 py-2">{item.data?.Age || "N/A"}</td>
-                      <td className="border px-4 py-2">{item.data?.Salary || "N/A"}</td>
-                    </tr>
-                  ))
-                ) : (
-                  <tr>
-                    <td colSpan="4" className="text-center py-4">No data available.</td>
-                  </tr>
-                )}
-              </tbody>
-            </table>
-          </div>
-        <div className="flex justify-end items-center">
-          <div className="flex items-center bg-gray-600 text-white rounded-full px-3 py-2 space-x-3">
-            <button
-              onClick={handlePrevPage}
-              disabled={page <= 1}
-              className={`w-8 h-8 flex items-center justify-center rounded-full ${page <= 1 ? "bg-gray-500 cursor-not-allowed" : "bg-gray-700 hover:bg-gray-600"}`}
-            >
-              <IoChevronBackSharp size={18} />
-            </button>
-            <span className="font-semibold text-sm">{page} of {totalPages}</span>
-            <button
-              onClick={handleNextPage}
-              disabled={page >= totalPages}
-              className={`w-8 h-8 flex items-center justify-center rounded-full ${page >= totalPages ? "bg-gray-500 cursor-not-allowed" : "bg-blue-500 hover:bg-blue-600"}`}
-            >
-              <IoChevronForwardSharp size={18} />
-            </button>
-            </div>
-          </div>
-        </div>
-        <Footer />
-        <Sidebar />
       </div>
     </div>
   );

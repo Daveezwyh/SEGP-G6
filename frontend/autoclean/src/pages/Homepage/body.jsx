@@ -43,39 +43,7 @@ export default function Body() {
     
         setDropzoneInstance(dz);
         return () => dz.destroy();
-    }, []);
-
-    const checkProgress = async (uuid, importId) => {
-        try {
-            const response = await axios.get(`http://35.213.150.144:8000/api/task-progress/${uuid}`, {
-                headers: {
-                    Authorization: `Bearer ${getToken()}`,
-                    Accept: "application/json"
-                }
-            });
-    
-            console.log("📊 Progress Response:", response.data);
-    
-            const serverProgress = parseFloat(response.data.percentage);
-            if (!isNaN(serverProgress)) {
-                setUploadProgress(serverProgress);
-            } else {
-                console.error("❌ Invalid progress value:", response.data.percentage);
-            }
-    
-            if (serverProgress >= 100) {
-                console.log("✅ Upload complete, waiting 1s before navigating...");
-                setTimeout(() => {
-                    navigate(`/info?importId=${importId}`);
-                }, 1000);
-                return;
-            }
-    
-            setTimeout(() => checkProgress(uuid, importId), 2000);
-        } catch (error) {
-            console.error("❌ Progress check failed:", error);
-        }
-    };    
+    }, []);    
 
     const handleConfirmUpload = async () => {
         if (!selectedFile) {
@@ -102,11 +70,10 @@ export default function Body() {
             console.log("✅ Server Response:", response.data);
     
             const taskUUID = response.data.task_progress_uuid;
-            const importId = response.data.id;
     
             if (taskUUID) {
                 setTaskUUID(taskUUID);
-                checkProgress(taskUUID, importId);
+                checkProgress(taskUUID);
             } else {
                 alert("❌ Upload successful, but the backend did not return a task ID!");
                 console.error("❌ Server response:", response.data);
@@ -119,6 +86,38 @@ export default function Body() {
                 alert("Failed to upload file. Please try again.");
                 console.error("Upload Error:", error);
             }
+        }
+    };
+    
+    const checkProgress = async (uuid) => {
+        try {
+            const response = await axios.get(`http://35.213.150.144:8000/api/task-progress/${uuid}`, {
+                headers: {
+                    Authorization: `Bearer ${getToken()}`,
+                    Accept: "application/json"
+                }
+            });
+    
+            console.log("📊 Progress Response:", response.data);
+    
+            const serverProgress = parseFloat(response.data.percentage);
+            if (!isNaN(serverProgress)) {
+                setUploadProgress(serverProgress);
+            } else {
+                console.error("❌ Invalid progress value:", response.data.percentage);
+            }
+    
+            if (serverProgress >= 100) {
+                console.log("✅ Upload complete, waiting 1s before navigating...");
+                setTimeout(() => {
+                    navigate(`/info`);  // 这里移除了 importId
+                }, 1000);
+                return;
+            }
+    
+            setTimeout(() => checkProgress(uuid), 2000);
+        } catch (error) {
+            console.error("❌ Progress check failed:", error);
         }
     };    
 
