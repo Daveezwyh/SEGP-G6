@@ -10,7 +10,12 @@ export default function Information() {
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState(null);
   const [searchId, setSearchId] = useState("");
+  const [page, setPage] = useState(1);
+  const [pageSize, setPageSize] = useState(3);
+  const [inputPage, setInputPage] = useState("1");
   const navigate = useNavigate();
+  const [totalCount, setTotalCount] = useState(0);
+  const totalPages = Math.ceil(totalCount / pageSize);
 
   const fetchData = () => {
     setLoading(true);
@@ -22,7 +27,12 @@ export default function Information() {
       return;
     }
 
-    const url = `http://35.213.150.144:8000/api/imports/`;
+    let url;
+    if (searchId) {
+      url = `http://35.213.150.144:8000/api/imports/${searchId}/`;
+    } else {
+      url = `http://35.213.150.144:8000/api/imports/?page=${page}&page_size=${pageSize}`;
+    }
 
     fetch(url, {
       method: "GET",
@@ -32,20 +42,17 @@ export default function Information() {
       },
     })
       .then((res) => {
-        if (res.status === 401) {
-          localStorage.removeItem("token");
-          sessionStorage.removeItem("token");
-          window.location.href = "/login";
-          throw new Error("Unauthorized: Token expired or invalid.");
-        }
-        if (!res.ok) {
-          throw new Error(`Server error: ${res.status}`);
-        }
+        if (!res.ok) throw new Error(`Server error: ${res.status}`);
         return res.json();
       })
       .then((json) => {
         console.log("API Response:", json);
-        setData(json || []);
+        if (searchId) {
+          setData(json ? [json] : []);
+        } else {
+          setData(json.results || []);
+          setTotalCount(json.count || 0);
+        }
         setLoading(false);
       })
       .catch((err) => {
@@ -56,7 +63,15 @@ export default function Information() {
 
   useEffect(() => {
     fetchData();
-  }, []);
+  }, [page, pageSize, searchId]);
+
+  useEffect(() => {
+    if (totalPages > 0 && page > totalPages) {
+      setPage(totalPages);
+    } else if (totalPages === 0) {
+      setPage(1);
+    }
+  }, [totalPages]);
 
   const filteredData = searchId
     ? data.filter((item) => item.id.toString() === searchId)
@@ -70,9 +85,24 @@ export default function Information() {
     setSearchId((prev) => (prev && parseInt(prev) > 1 ? (parseInt(prev) - 1).toString() : ""));
   };
 
+  const getPageNumbers = () => {
+    if (totalPages <= 5) {
+      return Array.from({ length: totalPages }, (_, i) => i + 1);
+    }
+    if (page <= 3) {
+      return [1, 2, 3, 4, "...", totalPages];
+    }
+    if (page >= totalPages - 2) {
+      return [1, "...", totalPages - 3, totalPages - 2, totalPages - 1, totalPages];
+    }
+    return [1, "...", page - 1, page, page + 1, "...", totalPages];
+  };
+
   return (
     <div className="min-h-screen bg-gray-100 p-6 dark:bg-gray-900 dark:text-white">
       <h1 className="text-xl font-bold mb-4">Information Page</h1>
+
+      {/* Search */}
       <div className="mb-4 flex items-center space-x-2">
         <input
           type="text"
@@ -90,7 +120,71 @@ export default function Information() {
           </button>
         </div>
       </div>
-      <div className="bg-white dark:bg-gray-800 rounded-lg shadow p-4 md:p-6 text-black dark:text-gray-200">
+
+      {/* Page Size */}
+      <div className="mb-4 flex items-center space-x-2">
+        <span>Page Size:</span>
+        <input
+          type="number"
+          value={pageSize}
+          onChange={(e) => {
+            const newSize = parseInt(e.target.value, 10);
+            if (!isNaN(newSize) && newSize > 0) setPageSize(newSize);
+          }}
+          className="p-2 border rounded w-20 text-black"
+          min="1"
+        />
+      </div>
+
+      {/* Page Navigation */}
+      <div className="mb-4 flex items-center space-x-2">
+        <button
+          onClick={() => setPage((prev) => Math.max(prev - 1, 1))}
+          disabled={page === 1}
+          className="px-4 py-2 bg-gray-300 dark:bg-gray-700 rounded disabled:opacity-50"
+        >
+          Previous Page
+        </button>
+        {getPageNumbers().map((num, index) => (
+          <button
+            key={index}
+            onClick={() => typeof num === "number" && setPage(num)}
+            className={`px-3 py-1 rounded ${num === page ? "bg-blue-500 text-white" : "bg-gray-300 dark:bg-gray-700"}`}
+            disabled={num === "..."}
+          >
+            {num}
+          </button>
+        ))}
+        <button
+          onClick={() => setPage((prev) => prev + 1)}
+          disabled={page === totalPages}
+          className="px-4 py-2 bg-gray-300 dark:bg-gray-700 rounded"
+        >
+          Next Page
+        </button>
+        <span>Jump to Page:</span>
+        <input
+          type="number"
+          value={inputPage}
+          onChange={(e) => setInputPage(e.target.value)}
+          className="p-2 border rounded w-24 text-black"
+          min="1"
+          max={totalPages}
+          placeholder="Page Number"
+        />
+        <button
+          onClick={() => {
+            const newPage = parseInt(inputPage);
+            if (!isNaN(newPage) && newPage > 0 && newPage <= totalPages) setPage(newPage);
+          }}
+          className="px-4 py-2 bg-blue-500 text-white rounded"
+        >
+          Go
+        </button>
+      </div>
+
+      {/* Data */}
+      <div className="bg-white dark:bg-gray-800 rounded-lg shadow p-4 text-black dark:text-gray-200">
         <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
           {loading && <p>Loading...</p>}
           {error && <p className="text-red-500">Error: {error}</p>}
