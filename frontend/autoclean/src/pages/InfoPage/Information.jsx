@@ -11,31 +11,29 @@ export default function Information() {
   const [error, setError] = useState(null);
   const [searchId, setSearchId] = useState("");
   const [page, setPage] = useState(1);
-  const [pageSize, setPageSize] = useState("All");
+  const [pageSize, setPageSize] = useState(3);
+  const [inputPage, setInputPage] = useState("1");
   const navigate = useNavigate();
   const [totalCount, setTotalCount] = useState(0);
-  const totalPages = pageSize === "All" ? 1 : Math.ceil(totalCount / pageSize);
+  const totalPages = Math.ceil(totalCount / pageSize);
 
   const fetchData = () => {
     setLoading(true);
     setError(null);
-  
+
     if (!token) {
       setError("No token found, please log in.");
       setLoading(false);
       return;
     }
-  
+
     let url;
     if (searchId) {
       url = `http://35.213.150.144:8000/api/imports/${searchId}/`;
     } else {
-      url = `http://35.213.150.144:8000/api/imports/?page=${page}`;
-      if (pageSize !== "All") {
-        url += `&page_size=${pageSize}`;
-      }
+      url = `http://35.213.150.144:8000/api/imports/?page=${page}&page_size=${pageSize}`;
     }
-  
+
     fetch(url, {
       method: "GET",
       headers: {
@@ -61,11 +59,19 @@ export default function Information() {
         setError(err.message);
         setLoading(false);
       });
-  };  
+  };
 
   useEffect(() => {
     fetchData();
   }, [page, pageSize, searchId]);
+
+  useEffect(() => {
+    if (totalPages > 0 && page > totalPages) {
+      setPage(totalPages);
+    } else if (totalPages === 0) {
+      setPage(1);
+    }
+  }, [totalPages]);
 
   const filteredData = searchId
     ? data.filter((item) => item.id.toString() === searchId)
@@ -79,14 +85,17 @@ export default function Information() {
     setSearchId((prev) => (prev && parseInt(prev) > 1 ? (parseInt(prev) - 1).toString() : ""));
   };
 
-  const incrementPageSize = () => {
-    setPage(1);
-    setPageSize((prev) => (prev === "All" ? 1 : prev + 1));
-  };
-
-  const decrementPageSize = () => {
-    setPage(1);
-    setPageSize((prev) => (prev > 1 ? prev - 1 : "All"));
+  const getPageNumbers = () => {
+    if (totalPages <= 5) {
+      return Array.from({ length: totalPages }, (_, i) => i + 1);
+    }
+    if (page <= 3) {
+      return [1, 2, 3, 4, "...", totalPages];
+    }
+    if (page >= totalPages - 2) {
+      return [1, "...", totalPages - 3, totalPages - 2, totalPages - 1, totalPages];
+    }
+    return [1, "...", page - 1, page, page + 1, "...", totalPages];
   };
 
   return (
@@ -112,69 +121,66 @@ export default function Information() {
         </div>
       </div>
 
-      {/* Page Number*/}
+      {/* Page Size */}
+      <div className="mb-4 flex items-center space-x-2">
+        <span>Page Size:</span>
+        <input
+          type="number"
+          value={pageSize}
+          onChange={(e) => {
+            const newSize = parseInt(e.target.value, 10);
+            if (!isNaN(newSize) && newSize > 0) setPageSize(newSize);
+          }}
+          className="p-2 border rounded w-20 text-black"
+          min="1"
+        />
+      </div>
+
+      {/* Page Navigation */}
       <div className="mb-4 flex items-center space-x-2">
         <button
           onClick={() => setPage((prev) => Math.max(prev - 1, 1))}
-          className="px-4 py-2 bg-gray-300 dark:bg-gray-700 rounded"
           disabled={page === 1}
+          className="px-4 py-2 bg-gray-300 dark:bg-gray-700 rounded disabled:opacity-50"
         >
-          Prev
+          Previous Page
         </button>
-
+        {getPageNumbers().map((num, index) => (
+          <button
+            key={index}
+            onClick={() => typeof num === "number" && setPage(num)}
+            className={`px-3 py-1 rounded ${num === page ? "bg-blue-500 text-white" : "bg-gray-300 dark:bg-gray-700"}`}
+            disabled={num === "..."}
+          >
+            {num}
+          </button>
+        ))}
+        <button
+          onClick={() => setPage((prev) => prev + 1)}
+          disabled={page === totalPages}
+          className="px-4 py-2 bg-gray-300 dark:bg-gray-700 rounded"
+        >
+          Next Page
+        </button>
+        <span>Jump to Page:</span>
         <input
           type="number"
-          value={page}
-          onChange={(e) => {
-            const value = parseInt(e.target.value);
-            if (!isNaN(value) && value > 0 && value <= totalPages) {
-              setPage(value);
-            }
-          }}
-          onKeyDown={(e) => {
-            if (e.key === "Enter" && page > 0 && page <= totalPages) {
-              fetchData();
-            }
-          }}
-          className="w-16 p-2 border rounded text-center text-black"
+          value={inputPage}
+          onChange={(e) => setInputPage(e.target.value)}
+          className="p-2 border rounded w-24 text-black"
+          min="1"
+          max={totalPages}
+          placeholder="Page Number"
         />
-
         <button
-          onClick={() => setPage((prev) => (prev < totalPages ? prev + 1 : prev))}
-          className="px-4 py-2 bg-gray-300 dark:bg-gray-700 rounded"
-          disabled={page >= totalPages}
-        >
-          Next
-        </button>
-      </div>
-
-      {/* Page Size*/}
-      <div className="mb-4 flex items-center space-x-2">
-        <label className="mr-2">Page Size:</label>
-        <input
-          type="text"
-          value={pageSize}
-          onChange={(e) => {
-            let value = e.target.value.trim();
-            if (value.toLowerCase() === "all") {
-              setPageSize("All");
-            } else {
-              const num = parseInt(value);
-              setPageSize(!isNaN(num) && num > 0 ? num : "All");
-            }
-            setPage(1);
+          onClick={() => {
+            const newPage = parseInt(inputPage);
+            if (!isNaN(newPage) && newPage > 0 && newPage <= totalPages) setPage(newPage);
           }}
-          className="p-2 border rounded bg-white text-black w-20 text-center"
-          placeholder="All"
-        />
-        <div className="flex flex-col">
-          <button onClick={incrementPageSize} className="p-1 bg-gray-300 dark:bg-gray-700 rounded">
-            <FaChevronUp />
-          </button>
-          <button onClick={decrementPageSize} className="p-1 bg-gray-300 dark:bg-gray-700 rounded mt-1">
-            <FaChevronDown />
-          </button>
-        </div>
+          className="px-4 py-2 bg-blue-500 text-white rounded"
+        >
+          Go
+        </button>
       </div>
 
       {/* Data */}

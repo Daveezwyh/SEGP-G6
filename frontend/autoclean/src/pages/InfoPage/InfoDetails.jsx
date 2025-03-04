@@ -11,7 +11,7 @@ export default function InfoDetails() {
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState(null);
   const [page, setPage] = useState(1);
-  const [pageSize, setPageSize] = useState(2);
+  const [pageSize, setPageSize] = useState(3);
   const [inputPage, setInputPage] = useState("1");
 
   useEffect(() => {
