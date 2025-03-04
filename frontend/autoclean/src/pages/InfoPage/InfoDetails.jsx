@@ -59,20 +59,25 @@ export default function InfoDetails() {
     fetchDetails();
     }, [id, page, pageSize]);
 
+    useEffect(() => {
+        setPage(1);
+        setInputPage("1");
+    }, [pageSize]);
+
     const totalPages = details ? Math.ceil(details.count / pageSize) : 1;
 
     const getPageNumbers = () => {
-    if (totalPages <= 5) {
-        return Array.from({ length: totalPages }, (_, i) => i + 1);
-    }
-    if (page <= 3) {
-        return [1, 2, 3, 4, "...", totalPages];
-    }
-    if (page >= totalPages - 2) {
-        return [1, "...", totalPages - 3, totalPages - 2, totalPages - 1, totalPages];
-    }
+        if (totalPages <= 5) {
+            return Array.from({ length: totalPages }, (_, i) => i + 1);
+        }
+        if (page <= 3) {
+            return [1, 2, 3, 4, "...", totalPages];
+        }
+        if (page >= totalPages - 2) {
+            return [1, "...", totalPages - 3, totalPages - 2, totalPages - 1, totalPages];
+        }
         return [1, "...", page - 1, page, page + 1, "...", totalPages];
-};
+    };
 
 return (
     <div className="min-h-screen bg-gray-100 dark:bg-gray-900 dark:text-white">
