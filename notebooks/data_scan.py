@@ -194,7 +194,7 @@ def scan_df_for_outliers(df: pd.DataFrame) -> List[ScanResult]:
 def scan_df_for_categorical(df: pd.DataFrame, 
                             categorical_dtypes: list = ['object', 'category', 'bool']) -> List[ScanResult]:
     scan_results = []
-    max_categories = int(len(df) * 0.01)
+    max_categories = int(len(df) * 0.1)
     
     non_numeric_cols = df.select_dtypes(include=categorical_dtypes)
     cleaner_id = 0
