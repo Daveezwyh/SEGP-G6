@@ -1,7 +1,6 @@
 import React, { useEffect, useState } from "react";
 import { useSelector } from "react-redux";
 import { getToken } from "../../utils";
-import { FaChevronUp, FaChevronDown } from "react-icons/fa";
 import { useNavigate } from "react-router-dom";
 
 import Header from "../Homepage/Header";
@@ -21,6 +20,12 @@ export default function Information() {
   const [totalCount, setTotalCount] = useState(0);
   const totalPages = Math.ceil(totalCount / pageSize);
 
+  useEffect(() => {
+    if (page > totalPages && totalPages > 0) {
+      setPage(totalPages);
+    }
+  }, [totalPages]);
+
   const fetchData = () => {
     setLoading(true);
     setError(null);
@@ -31,12 +36,9 @@ export default function Information() {
       return;
     }
 
-    let url;
-    if (searchId) {
-      url = `http://35.213.150.144:8000/api/imports/${searchId}/`;
-    } else {
-      url = `http://35.213.150.144:8000/api/imports/?page=${page}&page_size=${pageSize}`;
-    }
+    let url = searchId
+      ? `http://35.213.150.144:8000/api/imports/${searchId}/`
+      : `http://35.213.150.144:8000/api/imports/?page=${page}&page_size=${pageSize}`;
 
     fetch(url, {
       method: "GET",
@@ -69,25 +71,9 @@ export default function Information() {
     fetchData();
   }, [page, pageSize, searchId]);
 
-  useEffect(() => {
-    if (totalPages > 0 && page > totalPages) {
-      setPage(totalPages);
-    } else if (totalPages === 0) {
-      setPage(1);
-    }
-  }, [totalPages]);
-
   const filteredData = searchId
     ? data.filter((item) => item.id.toString() === searchId)
     : data;
-
-  const incrementSearchId = () => {
-    setSearchId((prev) => (prev ? (parseInt(prev) + 1).toString() : "1"));
-  };
-
-  const decrementSearchId = () => {
-    setSearchId((prev) => (prev && parseInt(prev) > 1 ? (parseInt(prev) - 1).toString() : ""));
-  };
 
   const getPageNumbers = () => {
     if (totalPages <= 5) {
@@ -106,117 +92,121 @@ export default function Information() {
     <div className="min-h-screen bg-gray-100 dark:bg-gray-900 dark:text-white">
       <Header />
       <div className="flex">
-      <Sidebar />
-      <div className="flex-1 p-9 bg-white dark:bg-gray-800 rounded-lg shadow-md">
-      <h1 className="text-xl font-bold mb-4">Information Page</h1>
+        <Sidebar />
+        <div className="flex-1 p-9 bg-white dark:bg-gray-800 rounded-lg shadow-md">
+          <h1 className="text-xl font-bold mb-4">Information Page</h1>
 
-      {/* Search */}
-      <div className="mb-4 flex items-center space-x-2">
-        <input
-          type="text"
-          placeholder="Search by ID"
-          value={searchId}
-          onChange={(e) => setSearchId(e.target.value)}
-          className="p-2 border rounded w-full md:w-1/3 text-black"
-        />
-      </div>
+          {/* Search */}
+          <div className="mb-4 flex items-center space-x-2">
+            <input
+              type="text"
+              placeholder="Search by ID"
+              value={searchId}
+              onChange={(e) => setSearchId(e.target.value)}
+              className="p-2 border rounded w-full md:w-1/3 text-black"
+            />
+          </div>
 
-      {/* Page Size */}
-      <div className="mb-4 flex items-center space-x-2">
-        <span>Page Size:</span>
-        <input
-          type="number"
-          value={pageSize}
-          onChange={(e) => {
-            const newSize = parseInt(e.target.value, 10);
-            if (!isNaN(newSize) && newSize > 0) setPageSize(newSize);
-          }}
-          className="p-2 border rounded w-20 text-black"
-          min="1"
-        />
-      </div>
+          {/* Page Size */}
+          <div className="mb-4 flex items-center space-x-2">
+            <span>Page Size:</span>
+            <input
+              type="number"
+              value={pageSize}
+              onChange={(e) => {
+                const newSize = parseInt(e.target.value, 10);
+                if (!isNaN(newSize) && newSize > 0) {
+                  setPageSize(newSize);
+                  setPage(1);
+                  setInputPage("1");
+                }
+              }}
+              className="p-2 border rounded w-20 text-black"
+              min="1"
+            />
+          </div>
 
-      {/* Data */}
-      <div className="bg-white dark:bg-gray-800 rounded-lg shadow p-4 text-black dark:text-gray-200">
-        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
-          {loading && <p>Loading...</p>}
-          {error && <p className="text-red-500">Error: {error}</p>}
-          {!loading && !error && filteredData.length > 0 ? (
-            filteredData.map((item) => (
-              <div key={item.id} className="bg-gray-200 dark:bg-gray-700 rounded-lg p-4 shadow-md">
-                <strong>ID:</strong> {item.id} <br />
-                <strong>Description:</strong> {item.description || "N/A"} <br />
-                <strong>Filename:</strong> {item.data?.filename || "N/A"} <br />
-                <strong>Total Rows:</strong> {item.data?.total_rows || 0} <br />
-                <strong>Uploaded By:</strong> {item.uploaded_by || "Unknown"} <br />
-                <strong>Uploaded At:</strong> {new Date(item.uploaded_at).toLocaleString()} <br />
+          {/* Data */}
+          <div className="bg-white dark:bg-gray-800 rounded-lg shadow p-4 text-black dark:text-gray-200">
+            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
+              {loading && <p>Loading...</p>}
+              {error && <p className="text-red-500">Error: {error}</p>}
+              {!loading && !error && filteredData.length > 0 ? (
+                filteredData.map((item) => (
+                  <div key={item.id} className="bg-gray-200 dark:bg-gray-700 rounded-lg p-4 shadow-md">
+                    <strong>ID:</strong> {item.id} <br />
+                    <strong>Description:</strong> {item.description || "N/A"} <br />
+                    <strong>Filename:</strong> {item.data?.filename || "N/A"} <br />
+                    <strong>Total Rows:</strong> {item.data?.total_rows || 0} <br />
+                    <strong>Uploaded By:</strong> {item.uploaded_by || "Unknown"} <br />
+                    <strong>Uploaded At:</strong> {new Date(item.uploaded_at).toLocaleString()} <br />
+                    <button
+                      onClick={() => navigate(`/info/${item.id}`)}
+                      className="mt-2 px-4 py-2 bg-blue-500 text-white rounded"
+                    >
+                      View
+                    </button>
+                  </div>
+                ))
+              ) : (
+                <p>No data available.</p>
+              )}
+            </div>
+          </div>
+
+          {/* Page Navigation */}
+          <div className="mt-12 flex items-center justify-between">
+            <div className="flex items-center space-x-2">
+              <button
+                onClick={() => setPage((prev) => Math.max(prev - 1, 1))}
+                disabled={page === 1}
+                className="px-4 py-2 bg-gray-300 dark:bg-gray-700 rounded disabled:opacity-50"
+              >
+                {'<'}
+              </button>
+              {getPageNumbers().map((num, index) => (
                 <button
-                  onClick={() => navigate(`/info/${item.id}`)}
-                  className="mt-2 px-4 py-2 bg-blue-500 text-white rounded"
+                  key={index}
+                  onClick={() => typeof num === "number" && setPage(num)}
+                  className={`px-3 py-1 rounded ${num === page ? "bg-blue-500 text-white" : "bg-gray-300 dark:bg-gray-700"}`}
+                  disabled={num === "..."}
                 >
-                  View
+                  {num}
                 </button>
-              </div>
-            ))
-          ) : (
-            <p>No data available.</p>
-          )}
-        </div>
-      </div>
+              ))}
+              <button
+                onClick={() => setPage((prev) => prev + 1)}
+                disabled={page === totalPages}
+                className="px-4 py-2 bg-gray-300 dark:bg-gray-700 rounded"
+              >
+                {'>'}
+              </button>
+            </div>
 
-      {/* Page Navigation */}
-      <div className="mt-12 flex items-center justify-between">
-        <div className="flex items-center space-x-2">
-        <button
-          onClick={() => setPage((prev) => Math.max(prev - 1, 1))}
-          disabled={page === 1}
-          className="px-4 py-2 bg-gray-300 dark:bg-gray-700 rounded disabled:opacity-50"
-        >
-          {'<'}
-        </button>
-        {getPageNumbers().map((num, index) => (
-          <button
-            key={index}
-            onClick={() => typeof num === "number" && setPage(num)}
-            className={`px-3 py-1 rounded ${num === page ? "bg-blue-500 text-white" : "bg-gray-300 dark:bg-gray-700"}`}
-            disabled={num === "..."}
-          >
-            {num}
-          </button>
-        ))}
-        <button
-          onClick={() => setPage((prev) => prev + 1)}
-          disabled={page === totalPages}
-          className="px-4 py-2 bg-gray-300 dark:bg-gray-700 rounded"
-        >
-          {'>'}
-        </button>
+            {/* Jump to Page */}
+            <div className="flex items-center space-x-2">
+              <span>Jump to Page:</span>
+              <input
+                type="number"
+                value={inputPage}
+                onChange={(e) => setInputPage(e.target.value)}
+                className="p-2 border rounded w-24 text-black"
+                min="1"
+                max={totalPages}
+                placeholder="Page Number"
+              />
+              <button
+                onClick={() => {
+                  const newPage = parseInt(inputPage);
+                  if (!isNaN(newPage) && newPage > 0 && newPage <= totalPages) setPage(newPage);
+                }}
+                className="px-4 py-2 bg-blue-500 text-white rounded"
+              >
+                Go
+              </button>
+            </div>
+          </div>
         </div>
-        
-        {/* jump to page */}
-        <div className="flex items-center space-x-2 ml-auto">
-        <span>Jump to Page:</span>
-        <input
-          type="number"
-          value={inputPage}
-          onChange={(e) => setInputPage(e.target.value)}
-          className="p-2 border rounded w-24 text-black"
-          min="1"
-          max={totalPages}
-          placeholder="Page Number"
-        />
-        <button
-          onClick={() => {
-            const newPage = parseInt(inputPage);
-            if (!isNaN(newPage) && newPage > 0 && newPage <= totalPages) setPage(newPage);
-          }}
-          className="px-4 py-2 bg-blue-500 text-white rounded"
-        >
-          Go
-        </button>
-      </div>
-      </div>
-      </div>
       </div>
       <Footer />
     </div>
