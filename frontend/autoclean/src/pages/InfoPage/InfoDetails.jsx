@@ -78,7 +78,6 @@ export default function InfoDetails() {
         <div className="min-h-screen bg-gray-100 dark:bg-gray-900 dark:text-white">
             <Header />
             <div className="flex">
-                <Sidebar />
                 <div className="flex-1 p-9 bg-white dark:bg-gray-800 rounded-lg shadow-md">
                     <h1 className="text-xl font-bold mb-4">File Details (ID: {id})</h1>
 
