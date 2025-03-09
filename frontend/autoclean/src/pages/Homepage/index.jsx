@@ -12,7 +12,6 @@ export default function Homepage() {
             <Header />
             <Body />
             <Footer/>
-            <Sidebar/>
            
         </div>
     );
