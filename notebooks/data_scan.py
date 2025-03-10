@@ -7,25 +7,16 @@ def scan_df_for_duplicates(df: pd.DataFrame) -> List[ScanResult]:
     scan_results = []
     duplicated_rows = df[df.duplicated(keep="first")]
     
-    cleaner_id = 0
     for index in duplicated_rows.index:
         actions = [
             ScanResultAction(
                 title="Duplication Remover",
                 description="Remove the duplicated rows",
-                cleaner="remove",
-                cleaner_id=cleaner_id,
-                activate=True
-            ),
-            ScanResultAction(
-                title="Duplication Remover",
-                description="Keep the duplicated rows",
-                cleaner="keep",
-                cleaner_id=cleaner_id + 1,
+                cleaner="clean_df_for_duplicates",
+                cleaner_id= None,
                 activate=True
             )
         ]
-        cleaner_id += 2  # Increment ID for next set of actions
         
         scan_results.append(
             ScanResult(
@@ -43,7 +34,6 @@ def scan_df_for_missing(df: pd.DataFrame) -> List[ScanResult]:
     missing_matrix = df.isna()
     scan_results = []
     
-    cleaner_id = 0
     for row_idx, col_idx in zip(*np.where(missing_matrix)):
         col_name = df.columns[col_idx]
         
@@ -53,80 +43,78 @@ def scan_df_for_missing(df: pd.DataFrame) -> List[ScanResult]:
                 ScanResultAction(
                     title="Missing Value Filler",
                     description="Fill with mean value",
-                    cleaner="mean",
-                    cleaner_id=cleaner_id,
+                    cleaner="fill_with_mean",
+                    cleaner_id=None,
                     activate=True
                 ),
                 ScanResultAction(
                     title="Missing Value Filler",
                     description="Fill with median value",
-                    cleaner="median",
-                    cleaner_id=cleaner_id + 1,
+                    cleaner="fill_with_median",
+                    cleaner_id=None,
                     activate=True
                 ),
                 ScanResultAction(
                     title="Missing Value Filler",
                     description="Fill with most frequent value",
-                    cleaner="mode",
-                    cleaner_id=cleaner_id + 2,
+                    cleaner="fill_with_mode",
+                    cleaner_id=None,
                     activate=True
                 ),
                 ScanResultAction(
                     title="Missing Value Filler",
                     description="Fill with previous value",
-                    cleaner="ffill",
-                    cleaner_id=cleaner_id + 3,
+                    cleaner="fill_with_ffill",
+                    cleaner_id=None,
                     activate=True
                 ),
                 ScanResultAction(
                     title="Missing Value Filler",
                     description="Fill with next value",
-                    cleaner="bfill",
-                    cleaner_id=cleaner_id + 4,
+                    cleaner="fill_with_bfill",
+                    cleaner_id=None,
                     activate=True
                 ),
                 ScanResultAction(
                     title="Missing Value Filler",
                     description="Delete the row",
-                    cleaner="delete",
-                    cleaner_id=cleaner_id + 5,
+                    cleaner="delete_missing_rows",
+                    cleaner_id=None,
                     activate=True
                 )
             ]
-            cleaner_id += 6
         else:
             # For non-numeric columns, offer only mode, ffill, bfill, and delete
             actions = [
                 ScanResultAction(
                     title="Missing Value Filler",
                     description="Fill with most frequent value",
-                    cleaner="mode",
-                    cleaner_id=cleaner_id,
+                    cleaner="fill_with_mode",
+                    cleaner_id=None,
                     activate=True
                 ),
                 ScanResultAction(
                     title="Missing Value Filler",
                     description="Fill with previous value",
-                    cleaner="ffill",
-                    cleaner_id=cleaner_id + 1,
+                    cleaner="fill_with_ffill",
+                    cleaner_id=None,
                     activate=True
                 ),
                 ScanResultAction(
                     title="Missing Value Filler",
                     description="Fill with next value",
-                    cleaner="bfill",
-                    cleaner_id=cleaner_id + 2,
+                    cleaner="fill_with_bfill",
+                    cleaner_id=None,
                     activate=True
                 ),
                 ScanResultAction(
                     title="Missing Value Filler",
                     description="Delete the row",
-                    cleaner="delete",
-                    cleaner_id=cleaner_id + 3,
+                    cleaner="delete_missing_rows",
+                    cleaner_id=None,
                     activate=True
                 )
             ]
-            cleaner_id += 4
         
         scan_results.append(
             ScanResult(
@@ -144,10 +132,6 @@ def scan_df_for_missing(df: pd.DataFrame) -> List[ScanResult]:
 def scan_df_for_outliers(df: pd.DataFrame) -> List[ScanResult]:
     scan_results = []
     
-    def auto_contamination(n):
-        return min(0.1, max(0.01, 5 / np.log(n)))
-    
-    cleaner_id = 0
     for col in df.select_dtypes(include=[np.number]):
         col_data = df[col].dropna()
         if col_data.empty:
@@ -165,19 +149,11 @@ def scan_df_for_outliers(df: pd.DataFrame) -> List[ScanResult]:
                 ScanResultAction(
                     title="Outlier Handler",
                     description="Delete the outlier",
-                    cleaner="delete",
-                    cleaner_id=cleaner_id,
-                    activate=True
-                ),
-                ScanResultAction(
-                    title="Outlier Handler",
-                    description="Keep the outlier",
-                    cleaner="keep",
-                    cleaner_id=cleaner_id + 1,
+                    cleaner="delete_outlier",
+                    cleaner_id=None,
                     activate=True
                 )
             ]
-            cleaner_id += 2
             
             scan_results.append(
                 ScanResult(
@@ -191,13 +167,11 @@ def scan_df_for_outliers(df: pd.DataFrame) -> List[ScanResult]:
     
     return scan_results
 
-def scan_df_for_categorical(df: pd.DataFrame, 
-                            categorical_dtypes: list = ['object', 'category', 'bool']) -> List[ScanResult]:
+def scan_df_for_categorical(df: pd.DataFrame, categorical_dtypes: list = ['object', 'category', 'bool']) -> List[ScanResult]:
     scan_results = []
     max_categories = int(len(df) * 0.1)
     
     non_numeric_cols = df.select_dtypes(include=categorical_dtypes)
-    cleaner_id = 0
 
     for col in non_numeric_cols.columns:
         if df[col].dropna().size == 0:
@@ -217,32 +191,24 @@ def scan_df_for_categorical(df: pd.DataFrame,
                 title="Categorical Encoder",
                 description="Apply one-hot encoding",
                 cleaner="one_hot",
-                cleaner_id=cleaner_id,
+                cleaner_id=None,
                 activate=True
             ),
             ScanResultAction(
                 title="Categorical Encoder",
                 description="Apply label encoding",
                 cleaner="label_encoding",
-                cleaner_id=cleaner_id + 1,
+                cleaner_id=None,
                 activate=True
             ),
             ScanResultAction(
                 title="Categorical Encoder",
                 description="Drop the column",
                 cleaner="drop",
-                cleaner_id=cleaner_id + 2,
-                activate=True
-            ),
-            ScanResultAction(
-                title="Categorical Encoder",
-                description="Keep the column",
-                cleaner="keep",
-                cleaner_id=cleaner_id + 3,
+                cleaner_id=None,
                 activate=True
             )
         ]
-        cleaner_id += 4
         
         scan_results.append(
             ScanResult(
@@ -262,21 +228,37 @@ def scan_df_for_target(df: pd.DataFrame, target) -> List[ScanResult]:
     
     for row_idx, col_idx in zip(*np.where(matches)):
         col_name = df.columns[col_idx]
+        
+        actions = [
+            ScanResultAction(
+                title=f"Handle '{target}' value",
+                description=f"Handle the '{target}' value in column '{col_name}'",
+                cleaner="handle_target",
+                activate=True,
+            ),
+            ScanResultAction(
+                title="Delete row",
+                description=f"Delete row {row_idx+1} because it contains '{target}'",
+                cleaner="delete_target_row",
+                activate=True,
+            ),
+            ScanResultAction(
+                title="Delete column",
+                description=f"Delete column '{col_name}' because it contains '{target}'",
+                cleaner="delete_target_column",
+                activate=True,
+            )
+        ]
+        
         scan_results.append(
             ScanResult(
                 row=row_idx,
                 col=col_name,
                 message=f"Target value '{target}' found in row {row_idx+1}, column '{col_name}'",
                 action_type=SRActionType.DEFAULT,
-                actions=[
-                    ScanResultAction(
-                        title="Handle '{target}'",
-                        description="Handle the '{target}' value",
-                        cleaner="handle_target",
-                        activate=True,
-                    )
-                ]
+                actions=actions
             )
         )
     
     return scan_results
+
