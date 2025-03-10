@@ -158,7 +158,7 @@ export default function Body() {
             if (serverProgress >= 100) {
                 console.log("✅ Upload complete, waiting 1s before navigating...");
                 setTimeout(() => {
-                    navigate(`/info`);  // 这里移除了 importId
+                    navigate(`/info`);
                 }, 1000);
                 return;
             }

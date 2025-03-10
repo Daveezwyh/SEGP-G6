@@ -4,7 +4,6 @@ import { useNavigate, useParams } from "react-router-dom";
 import { getToken } from "../../utils";
 
 import Header from "../Homepage/Header";
-import Sidebar from "../Homepage/bars/Sidebar";
 import Footer from "../Homepage/footer";
 
 export default function InfoDetails() {
@@ -81,7 +80,8 @@ export default function InfoDetails() {
                 <div className="flex-1 p-9 bg-white dark:bg-gray-800 rounded-lg shadow-md">
                     <h1 className="text-xl font-bold mb-4">File Details (ID: {id})</h1>
 
-                    <div className="mb-4 flex items-center space-x-2">
+                    <div className="mb-4 flex items-center justify-between">
+                    <div className="flex items-center space-x-2">
                         <span>Page Size:</span>
                         <input
                             type="number"
@@ -97,6 +97,19 @@ export default function InfoDetails() {
                             className="p-2 border rounded w-20 text-black"
                             min="1"
                         />
+                    </div>
+
+                    <button
+                        onClick={() => {
+                            setPageSize(3); // Reset to default page size
+                            setPage(1); // Reset to the first page
+                            setInputPage("1"); // Reset the input field
+                        }}
+                        className="px-4 py-2 bg-red-500 hover:bg-red-600 text-white rounded"
+                    >
+                        Clean
+                    </button>
+                    
                     </div>
 
                     <div className="bg-white dark:bg-gray-800 rounded-lg shadow p-4 text-black dark:text-gray-200">
