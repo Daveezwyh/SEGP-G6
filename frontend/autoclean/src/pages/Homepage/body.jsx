@@ -17,9 +17,57 @@ export default function Body() {
         const dz = new Dropzone(dropzoneRef.current, {
             url: "/fake-upload-url",
             acceptedFiles: ".xlsx,.xls,.csv",
-            maxFiles: 1,
+            maxFiles: 5,
             autoProcessQueue: false,
             dictDefaultMessage: "Drag and drop your Excel file here, or click to browse",
+            previewTemplate: `
+            <div class="dz-preview dz-file-preview relative p-2 flex flex-col items-center">
+                <div
+                    class="flex flex-col items-center justify-center bg-gray-200 rounded-lg shadow-md"
+                    style="width: 120px; height: 120px; position: relative;"
+                >
+                    <div
+                        class="dz-progress bg-black rounded-full flex items-center justify-center"
+                        style="width: 40px; height: 20px; color: white;"
+                        data-dz-uploadprogress
+                    >
+                        <span class="text-xs" data-dz-uploadprogress>%</span>
+                    </div>
+
+                    <!-- File Size Display -->
+                    <div
+                        class="text-sm font-bold text-black bg-white px-2 py-1 rounded mt-2"
+                        style="min-width: 50px;"
+                        data-dz-size
+                    ></div>
+
+                    <!-- Remove Button -->
+                    <button
+                        class="dz-remove"
+                        title="Remove File"
+                        style="
+                            position: absolute;
+                            top: 5px;
+                            right: 5px;
+                            background-color: #f56565;
+                            color: white;
+                            border: none;
+                            border-radius: 50%;
+                            width: 20px;
+                            height: 20px;
+                            font-size: 14px;
+                            line-height: 1;
+                            cursor: pointer;
+                            z-index: 10;
+                        "
+                        data-dz-remove
+                    >&times;</button>
+                </div>
+
+                <!-- File Name Display -->
+                <div class="text-sm text-center mt-2" data-dz-name></div>
+            </div>
+        `,
             init: function () {
                 this.on("addedfile", (file) => {
                     setSelectedFile(file);

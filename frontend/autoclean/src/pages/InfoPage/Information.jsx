@@ -99,11 +99,18 @@ export default function Information() {
           {/* Search */}
           <div className="mb-4 flex items-center space-x-2">
             <input
-              type="text"
+              type="number"
               placeholder="Search by ID"
               value={searchId}
-              onChange={(e) => setSearchId(e.target.value)}
+              onChange={(e) => {
+                const value = e.target.value.replace(/\D/g, "");
+                if (value === "" || (parseInt(value, 10) > 0 && parseInt(value, 10) <= totalCount)) {
+                  setSearchId(value);
+                }
+              }}
               className="p-2 border rounded w-full md:w-1/3 text-black"
+              min="1"
+              max={totalCount}
             />
           </div>
 
@@ -115,7 +122,7 @@ export default function Information() {
               value={pageSize}
               onChange={(e) => {
                 const newSize = parseInt(e.target.value, 10);
-                if (!isNaN(newSize) && newSize > 0) {
+                if (!isNaN(newSize) && newSize > 0 && newSize <= totalCount) {
                   setPageSize(newSize);
                   setPage(1);
                   setInputPage("1");
@@ -123,6 +130,7 @@ export default function Information() {
               }}
               className="p-2 border rounded w-20 text-black"
               min="1"
+              max={totalCount}
             />
           </div>
 

@@ -17,6 +17,7 @@ export default function InfoDetails() {
     const [page, setPage] = useState(1);
     const [pageSize, setPageSize] = useState(3);
     const [inputPage, setInputPage] = useState("1");
+    const [headers, setHeaders] = useState([]);
 
     useEffect(() => {
         if (!id) return;
@@ -49,6 +50,11 @@ export default function InfoDetails() {
 
                 const data = await res.json();
                 setDetails(data);
+
+                if (data.results && data.results.length > 0) {
+                    const firstRow = data.results[0].data;
+                    setHeaders(Object.keys(firstRow));
+                }
             } catch (err) {
                 setError(err.message);
             } finally {
@@ -78,7 +84,6 @@ export default function InfoDetails() {
         <div className="min-h-screen bg-gray-100 dark:bg-gray-900 dark:text-white">
             <Header />
             <div className="flex">
-                <Sidebar />
                 <div className="flex-1 p-9 bg-white dark:bg-gray-800 rounded-lg shadow-md">
                     <h1 className="text-xl font-bold mb-4">File Details (ID: {id})</h1>
 
@@ -113,25 +118,40 @@ export default function InfoDetails() {
                                 </p>
                                 <h3 className="mt-4 font-bold">Records:</h3>
                                 {details.results?.length > 0 ? (
-                                    details.results.map((record) => (
-                                        <div key={record.id} className="p-2 border rounded my-2">
-                                            <p><strong>ID:</strong> {record.id}</p>
-                                            <p><strong>Name:</strong> {record.data.Name}</p>
-                                            <p><strong>Age:</strong> {record.data.Age}</p>
-                                            <p><strong>Gender:</strong> {record.data.Gender}</p>
-                                            <p><strong>Salary:</strong> {record.data.Salary}</p>
-                                        </div>
-                                    ))
+                                    <table className="min-w-full border-collapse">
+                                        <thead>
+                                            <tr>
+                                                {headers.map((header) => (
+                                                    <th key={header} className="border px-4 py-2 bg-gray-200 dark:bg-gray-700">
+                                                        {header}
+                                                    </th>
+                                                ))}
+                                            </tr>
+                                        </thead>
+                                        <tbody>
+                                            {details.results.map((record) => (
+                                                <tr key={record.id} className="hover:bg-gray-100 dark:hover:bg-gray-600">
+                                                    {headers.map((header) => (
+                                                        <td key={header} className="border px-4 py-2">
+                                                            {record.data[header] ?? "-"}
+                                                        </td>
+                                                    ))}
+                                                </tr>
+                                            ))}
+                                        </tbody>
+                                    </table>
                                 ) : (
                                     <p>No records available.</p>
                                 )}
 
-                                <button
-                                    onClick={() => navigate(-1)}
-                                    className="mb-1 px-4 py-2 bg-gray-500 text-white rounded"
-                                >
-                                    Back
-                                </button>
+                                <div className="pt-4">
+                                    <button
+                                        onClick={() => navigate(-1)}
+                                        className="mb-1 px-4 py-2 bg-gray-500 text-white rounded"
+                                    >
+                                        Back
+                                    </button>
+                                </div>
 
                                 {/* Pagination Controls */}
                                 <div className="mt-12 flex items-center justify-between">
@@ -141,7 +161,7 @@ export default function InfoDetails() {
                                             disabled={page === 1}
                                             className="px-4 py-2 bg-gray-300 dark:bg-gray-700 rounded disabled:opacity-50"
                                         >
-                                            {'<'}
+                                            {"<"}
                                         </button>
                                         {getPageNumbers().map((num, index) => (
                                             <button
@@ -158,7 +178,7 @@ export default function InfoDetails() {
                                             disabled={page === totalPages}
                                             className="px-4 py-2 bg-gray-300 dark:bg-gray-700 rounded"
                                         >
-                                            {'>'}
+                                            {">"}
                                         </button>
                                     </div>
 
