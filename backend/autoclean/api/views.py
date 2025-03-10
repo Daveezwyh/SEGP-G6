@@ -2,6 +2,9 @@ from django.contrib.auth.models import User
 from django.shortcuts import get_object_or_404
 from django.db.models import Q
 from django.db.models.expressions import RawSQL
+from django.http import StreamingHttpResponse
+from django.utils.text import slugify
+from django.utils.timezone import now
 from rest_framework import viewsets, status, generics
 from rest_framework.response import Response
 from rest_framework.views import APIView
@@ -12,6 +15,8 @@ from rest_framework.parsers import MultiPartParser
 from celery import chain
 from drf_spectacular.utils import extend_schema, OpenApiParameter, OpenApiTypes, OpenApiResponse, OpenApiExample
 import logging
+import pandas as pd
+import tempfile
 
 from .serializers import (
     UserSerializer, UploadImportSerializer, ImportSerializer, ImportDataSerializer,
@@ -20,7 +25,7 @@ from .serializers import (
 )
 from .tasks import read_file_to_import_data, copy_import_data_original, scan_import, clean_import
 from .models import TaskProgress, Import, ImportData, ImportScanResult, ImportScanResultAction
-from autoclean.utils import AutocleanAPIPagination
+from autoclean.utils import AutocleanAPIPagination, df_from_import_model
 
 logger = logging.getLogger('django')
 
@@ -291,6 +296,35 @@ class ImportViewSet(viewsets.ReadOnlyModelViewSet):
         })
 
         return Response(response_data, status=status.HTTP_201_CREATED)
+    
+    @action(detail=True, methods=['get'], url_path='export')
+    def export(self, request, pk=None):
+        try:
+            import_instance = Import.objects.get(id=pk)
+
+            if import_instance.status != Import.Status.COMPLETED:
+                return Response({"error": "Import has not yet been processed."}, status=status.HTTP_400_BAD_REQUEST)
+            
+            description_slug = slugify(import_instance.description)
+            timestamp = now().strftime('%Y%m%d%H%M')
+            filename = f"{description_slug}_cleaned_{timestamp}.xlsx"
+
+            df = df_from_import_model(pk)
+
+            def generate():
+                with tempfile.NamedTemporaryFile(delete=False) as tmp:
+                    with pd.ExcelWriter(tmp.name, engine='xlsxwriter') as writer:
+                        df.to_excel(writer, index=False)
+                    with open(tmp.name, 'rb') as f:
+                        yield from f
+
+            response = StreamingHttpResponse(generate(), content_type='application/vnd.openxmlformats-officedocument.spreadsheetml.sheet')
+            response['Content-Disposition'] = f'attachment; filename={filename}'
+            return response
+        except Import.DoesNotExist:
+            return Response({"error": "Import not found"}, status=status.HTTP_404_NOT_FOUND)
+        except Exception as e:
+            return Response({"error": str(e)}, status=status.HTTP_500_INTERNAL_SERVER_ERROR)
 
 class ImportScanResultActionUpdateView(APIView):
     permission_classes = [IsAuthenticated]
