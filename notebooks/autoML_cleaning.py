@@ -1,6 +1,6 @@
 import pandas as pd
 import re
-from pycaret.classification import setup, get_config
+from pycaret.classification import setup, get_config, pull, compare_models
 from typing import Optional
 
 def auto_ML_cleaning(df: pd.DataFrame, target: Optional[str] = None) -> pd.DataFrame:
@@ -72,4 +72,8 @@ def auto_ML_cleaning(df: pd.DataFrame, target: Optional[str] = None) -> pd.DataF
         )
     
     df = get_config('X').join(get_config('y'))
+
+    compare_models(sort='AUC')
+    model_comparison = pull()
+
     return df
