@@ -2,6 +2,7 @@ import React, { useEffect, useState } from "react";
 import { useSelector } from "react-redux";
 import { useNavigate, useParams } from "react-router-dom";
 import { getToken } from "../../utils";
+import Swal from 'sweetalert';
 
 import Header from "../Homepage/Header";
 import Footer from "../Homepage/footer";
@@ -107,15 +108,33 @@ export default function InfoDetails() {
 
                     <button
                         onClick={() => {
+                            Swal.fire({
+                            title: 'Are you sure?',
+                            text: 'Do you want clean data?',
+                            icon: 'warning',
+                            showCancelButton: true,
+                            confirmButtonColor: '#3085d6',
+                            cancelButtonColor: '#d33',
+                            confirmButtonText: 'Yes',
+                        }).then((result) => {
+                            if(result.isConfirmed){
                             setPageSize(3); // Reset to default page size
                             setPage(1); // Reset to the first page
                             setInputPage("1"); // Reset the input field
-                        }}
+
+                            Swal.fire(
+                                'Reset!',
+                                'The page has been reset to default settings.',
+                                'success'
+                            );
+                        }
+                      });
+                    }}
                         className="px-4 py-2 bg-red-500 hover:bg-red-600 text-white rounded"
                     >
                         Clean
                     </button>
-                    
+
                     </div>
 
                     <div className="bg-white dark:bg-gray-800 rounded-lg shadow p-4 text-black dark:text-gray-200">
