@@ -16,6 +16,7 @@ export default function InfoDetails() {
     const [page, setPage] = useState(1);
     const [pageSize, setPageSize] = useState(3);
     const [inputPage, setInputPage] = useState("1");
+    const [headers, setHeaders] = useState([]);
 
     useEffect(() => {
         if (!id) return;
@@ -48,6 +49,11 @@ export default function InfoDetails() {
 
                 const data = await res.json();
                 setDetails(data);
+
+                if (data.results && data.results.length > 0) {
+                    const firstRow = data.results[0].data;
+                    setHeaders(Object.keys(firstRow));
+                }
             } catch (err) {
                 setError(err.message);
             } finally {
@@ -126,27 +132,27 @@ export default function InfoDetails() {
                                 <h3 className="mt-4 font-bold">Records:</h3>
                                 {details.results?.length > 0 ? (
                                     <table className="min-w-full border-collapse">
-                                        <thead>
-                                            <tr>
-                                                {["ID", "Name", "Age", "Gender", "Salary"].map((header) => (
-                                                    <th key={header} className="border px-4 py-2 bg-gray-200 dark:bg-gray-700">
+                                    <thead>
+                                        <tr>
+                                            {headers.map((header) => (
+                                                <th key={header} className="border px-4 py-2 bg-gray-200 dark:bg-gray-700">
                                                     {header}
                                                 </th>
+                                            ))}
+                                        </tr>
+                                    </thead>
+                                    <tbody>
+                                        {details.results.map((record) => (
+                                            <tr key={record.id} className="hover:bg-gray-100 dark:hover:bg-gray-600">
+                                                {headers.map((header) => (
+                                                    <td key={header} className="border px-4 py-2">
+                                                        {record.data[header] ?? "-"}
+                                                    </td>
                                                 ))}
                                             </tr>
-                                        </thead>
-                                        <tbody>
-                                            {details.results.map((record) => (
-                                                <tr key={record.id} className="hover:bg-gray-100 dark:hover:bg-gray-600">
-                                                    <td className="border px-4 py-2">{record.id}</td>
-                                                    <td className="border px-4 py-2">{record.data.Name}</td>
-                                                    <td className="border px-4 py-2">{record.data.Age}</td>
-                                                    <td className="border px-4 py-2">{record.data.Gender}</td>
-                                                    <td className="border px-4 py-2">{record.data.Salary}</td>
-                                                </tr>
-                                            ))}
-                                        </tbody>
-                                    </table>
+                                        ))}
+                                    </tbody>
+                                </table>
                                 ) : (
                                     <p>No records available.</p>
                                 )}
@@ -168,7 +174,7 @@ export default function InfoDetails() {
                                             disabled={page === 1}
                                             className="px-4 py-2 bg-gray-300 dark:bg-gray-700 rounded disabled:opacity-50"
                                         >
-                                            {'<'}
+                                            {"<"}
                                         </button>
                                         {getPageNumbers().map((num, index) => (
                                             <button
@@ -185,7 +191,7 @@ export default function InfoDetails() {
                                             disabled={page === totalPages}
                                             className="px-4 py-2 bg-gray-300 dark:bg-gray-700 rounded"
                                         >
-                                            {'>'}
+                                            {">"}
                                         </button>
                                     </div>
 
