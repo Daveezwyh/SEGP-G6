@@ -2,7 +2,7 @@ import React, { useEffect, useState } from "react";
 import { useSelector } from "react-redux";
 import { useNavigate, useParams } from "react-router-dom";
 import { getToken } from "../../utils";
-import Swal from 'sweetalert';
+import Swal from 'sweetalert2';
 
 import Header from "../Homepage/Header";
 import Footer from "../Homepage/footer";
@@ -109,9 +109,9 @@ export default function InfoDetails() {
                     <button
                         onClick={() => {
                             Swal.fire({
-                            title: 'Are you sure?',
+                            title: 'Confirm?',
                             text: 'Do you want clean data?',
-                            icon: 'warning',
+                            icon: 'info',
                             showCancelButton: true,
                             confirmButtonColor: '#3085d6',
                             cancelButtonColor: '#d33',
@@ -123,9 +123,9 @@ export default function InfoDetails() {
                             setInputPage("1"); // Reset the input field
 
                             Swal.fire(
-                                'Reset!',
-                                'The page has been reset to default settings.',
-                                'success'
+                                "Reset!",
+                                "The page has been reset to default settings.",
+                                "success"
                             );
                         }
                       });

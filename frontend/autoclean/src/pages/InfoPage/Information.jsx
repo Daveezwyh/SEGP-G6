@@ -129,7 +129,7 @@ export default function Information() {
               value={pageSize}
               onChange={(e) => {
                 const newSize = parseInt(e.target.value, 10);
-                if (!isNaN(newSize) && newSize > 0) {
+                if (!isNaN(newSize) && newSize > 0 && newSize <= totalCount) {
                   setPageSize(newSize);
                   setPage(1);
                   setInputPage("1");
@@ -137,6 +137,7 @@ export default function Information() {
               }}
               className="p-2 border rounded w-20 text-black"
               min="1"
+              max={totalCount}
             />
           </div>
 
