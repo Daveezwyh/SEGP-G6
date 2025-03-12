@@ -118,10 +118,11 @@ export default function Body() {
             console.log("✅ Server Response:", response.data);
     
             const taskUUID = response.data.task_progress_uuid;
+            const newFileId = response.data.id;
     
-            if (taskUUID) {
+            if (taskUUID && newFileId) {
                 setTaskUUID(taskUUID);
-                checkProgress(taskUUID);
+                checkProgress(taskUUID, newFileId);
             } else {
                 alert("❌ Upload successful, but the backend did not return a task ID!");
                 console.error("❌ Server response:", response.data);
@@ -137,7 +138,7 @@ export default function Body() {
         }
     };
     
-    const checkProgress = async (uuid) => {
+    const checkProgress = async (uuid, fileId) => {
         try {
             const response = await axios.get(`http://35.213.150.144:8000/api/task-progress/${uuid}`, {
                 headers: {
@@ -158,12 +159,12 @@ export default function Body() {
             if (serverProgress >= 100) {
                 console.log("✅ Upload complete, waiting 1s before navigating...");
                 setTimeout(() => {
-                    navigate(`/info`);
+                    navigate(`/info/${fileId}`);
                 }, 1000);
                 return;
             }
     
-            setTimeout(() => checkProgress(uuid), 2000);
+            setTimeout(() => checkProgress(uuid, fileId), 2000);
         } catch (error) {
             console.error("❌ Progress check failed:", error);
         }
