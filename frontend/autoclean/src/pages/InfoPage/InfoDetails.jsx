@@ -18,6 +18,8 @@ export default function InfoDetails() {
     const [pageSize, setPageSize] = useState(3);
     const [inputPage, setInputPage] = useState("1");
     const [headers, setHeaders] = useState([]);
+    const [showTabs, setShowTabs] = useState(false);
+    const [activeTab, setActiveTab] = useState(0);
 
     useEffect(() => {
         if (!id) return;
@@ -121,12 +123,7 @@ export default function InfoDetails() {
                             setPageSize(3); // Reset to default page size
                             setPage(1); // Reset to the first page
                             setInputPage("1"); // Reset the input field
-
-                            Swal.fire(
-                                "Reset!",
-                                "The page has been reset to default settings.",
-                                "success"
-                            );
+                            setShowTabs(true);
                         }
                       });
                     }}
@@ -134,8 +131,7 @@ export default function InfoDetails() {
                     >
                         Clean
                     </button>
-
-                    </div>
+                </div>
 
                     <div className="bg-white dark:bg-gray-800 rounded-lg shadow p-4 text-black dark:text-gray-200">
                         {loading ? (
@@ -241,6 +237,39 @@ export default function InfoDetails() {
                             <p>No details available.</p>
                         )}
                     </div>
+
+                    {showTabs && (
+                <div className="mt-6 border-b border-gray-300">
+                    <ul className="flex space-x-6 border-b">
+                        {["Errors", "Dropdown", "Link", "Disabled"].map((tab, index) => (
+                            <li
+                                key={index}
+                                className={`p-3 px-3 cursor-pointer transition-all duration-300
+                                    ${
+                                        activeTab === index
+                                            ? "border-b-2 border-blue-500 text-black font-semibold bg-gray-100"
+                                            : "text-blue-500 hover:text-blue-700"
+                                    } 
+                                    ${tab === "Disabled" ? "text-gray-400 cursor-not-allowed" : ""}
+                                `}
+                                onClick={() => tab !== "Disabled" && setActiveTab(index)}
+                            >
+                                {tab}
+                            </li>
+                        ))}
+                    </ul>
+
+                    {/* Tab Content Section */}
+                    <div className="p-6 bg-white rounded-lg shadow-md transition-opacity duration-300">
+                        {activeTab === 0 && <div>🔥 <strong>Errors</strong> Data Goes Here</div>}
+                        {activeTab === 1 && <div>📂 <strong>Dropdown</strong> Data Content</div>}
+                        {activeTab === 2 && <div>🔗 <strong>Link</strong> Data Content</div>}
+                        {activeTab === 3 && <div> <strong>Hello</strong> Content</div>}
+                    </div>
+                </div>
+            )}
+
+
                 </div>
             </div>
             <Footer />
