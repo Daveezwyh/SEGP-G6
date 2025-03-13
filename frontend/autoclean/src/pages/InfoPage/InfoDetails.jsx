@@ -2,9 +2,9 @@ import React, { useEffect, useState } from "react";
 import { useSelector } from "react-redux";
 import { useNavigate, useParams } from "react-router-dom";
 import { getToken } from "../../utils";
+import Swal from 'sweetalert2';
 
 import Header from "../Homepage/Header";
-import Sidebar from "../Homepage/bars/Sidebar";
 import Footer from "../Homepage/footer";
 
 export default function InfoDetails() {
@@ -18,6 +18,8 @@ export default function InfoDetails() {
     const [pageSize, setPageSize] = useState(3);
     const [inputPage, setInputPage] = useState("1");
     const [headers, setHeaders] = useState([]);
+    const [showTabs, setShowTabs] = useState(false);
+    const [activeTab, setActiveTab] = useState(0);
 
     useEffect(() => {
         if (!id) return;
@@ -87,7 +89,8 @@ export default function InfoDetails() {
                 <div className="flex-1 p-9 bg-white dark:bg-gray-800 rounded-lg shadow-md">
                     <h1 className="text-xl font-bold mb-4">File Details (ID: {id})</h1>
 
-                    <div className="mb-4 flex items-center space-x-2">
+                    <div className="mb-4 flex items-center justify-between">
+                    <div className="flex items-center space-x-2">
                         <span>Page Size:</span>
                         <input
                             type="number"
@@ -95,7 +98,8 @@ export default function InfoDetails() {
                             onChange={(e) => {
                                 const newSize = parseInt(e.target.value, 10);
                                 if (!isNaN(newSize) && newSize > 0) {
-                                    setPageSize(newSize);
+                                    const maxSize = details ? details.count : newSize;
+                                    setPageSize(Math.min(newSize, maxSize));
                                     setPage(1);
                                     setInputPage("1");
                                 }
@@ -104,6 +108,31 @@ export default function InfoDetails() {
                             min="1"
                         />
                     </div>
+
+                    <button
+                        onClick={() => {
+                            Swal.fire({
+                            title: 'Confirm?',
+                            text: 'Do you want clean data?',
+                            icon: 'info',
+                            showCancelButton: true,
+                            confirmButtonColor: '#3085d6',
+                            cancelButtonColor: '#d33',
+                            confirmButtonText: 'Yes',
+                        }).then((result) => {
+                            if(result.isConfirmed){
+                            setPageSize(3); // Reset to default page size
+                            setPage(1); // Reset to the first page
+                            setInputPage("1"); // Reset the input field
+                            setShowTabs(true);
+                        }
+                      });
+                    }}
+                        className="px-4 py-2 bg-red-500 hover:bg-red-600 text-white rounded"
+                    >
+                        Clean
+                    </button>
+                </div>
 
                     <div className="bg-white dark:bg-gray-800 rounded-lg shadow p-4 text-black dark:text-gray-200">
                         {loading ? (
@@ -119,38 +148,38 @@ export default function InfoDetails() {
                                 <h3 className="mt-4 font-bold">Records:</h3>
                                 {details.results?.length > 0 ? (
                                     <table className="min-w-full border-collapse">
-                                        <thead>
-                                            <tr>
+                                    <thead>
+                                        <tr>
+                                            {headers.map((header) => (
+                                                <th key={header} className="border px-4 py-2 bg-gray-200 dark:bg-gray-700">
+                                                    {header}
+                                                </th>
+                                            ))}
+                                        </tr>
+                                    </thead>
+                                    <tbody>
+                                        {details.results.map((record) => (
+                                            <tr key={record.id} className="hover:bg-gray-100 dark:hover:bg-gray-600">
                                                 {headers.map((header) => (
-                                                    <th key={header} className="border px-4 py-2 bg-gray-200 dark:bg-gray-700">
-                                                        {header}
-                                                    </th>
+                                                    <td key={header} className="border px-4 py-2">
+                                                        {record.data[header] ?? "-"}
+                                                    </td>
                                                 ))}
                                             </tr>
-                                        </thead>
-                                        <tbody>
-                                            {details.results.map((record) => (
-                                                <tr key={record.id} className="hover:bg-gray-100 dark:hover:bg-gray-600">
-                                                    {headers.map((header) => (
-                                                        <td key={header} className="border px-4 py-2">
-                                                            {record.data[header] ?? "-"}
-                                                        </td>
-                                                    ))}
-                                                </tr>
-                                            ))}
-                                        </tbody>
-                                    </table>
+                                        ))}
+                                    </tbody>
+                                </table>
                                 ) : (
                                     <p>No records available.</p>
                                 )}
 
                                 <div className="pt-4">
-                                    <button
-                                        onClick={() => navigate(-1)}
-                                        className="mb-1 px-4 py-2 bg-gray-500 text-white rounded"
-                                    >
-                                        Back
-                                    </button>
+                                <button
+                                    onClick={() => navigate(-1)}
+                                    className="mb-1 px-4 py-2 bg-gray-500 text-white rounded"
+                                >
+                                    Back
+                                </button>
                                 </div>
 
                                 {/* Pagination Controls */}
@@ -209,6 +238,39 @@ export default function InfoDetails() {
                             <p>No details available.</p>
                         )}
                     </div>
+
+                    {showTabs && (
+                <div className="mt-6 border-b border-gray-300">
+                    <ul className="flex space-x-6 border-b">
+                        {["Errors", "Dropdown", "Link", "Disabled"].map((tab, index) => (
+                            <li
+                                key={index}
+                                className={`p-3 px-3 cursor-pointer transition-all duration-300
+                                    ${
+                                        activeTab === index
+                                            ? "border-b-2 border-blue-500 text-black font-semibold bg-gray-100"
+                                            : "text-blue-500 hover:text-blue-700"
+                                    } 
+                                    ${tab === "Disabled" ? "text-gray-400 cursor-not-allowed" : ""}
+                                `}
+                                onClick={() => tab !== "Disabled" && setActiveTab(index)}
+                            >
+                                {tab}
+                            </li>
+                        ))}
+                    </ul>
+
+                    {/* Tab Content Section */}
+                    <div className="p-6 bg-white rounded-lg shadow-md transition-opacity duration-300">
+                        {activeTab === 0 && <div>🔥 <strong>Errors</strong> Data Goes Here</div>}
+                        {activeTab === 1 && <div>📂 <strong>Dropdown</strong> Data Content</div>}
+                        {activeTab === 2 && <div>🔗 <strong>Link</strong> Data Content</div>}
+                        {activeTab === 3 && <div> <strong>Hello</strong> Content</div>}
+                    </div>
+                </div>
+            )}
+
+
                 </div>
             </div>
             <Footer />

@@ -20,7 +20,7 @@ export default function Sidebar({ isOpen, toggleSidebar }) {
     };
 
     const handleNavigateToHome = () => {
-        navigate("/Homepage");
+        navigate("/homepage");
     };
 
     const handleNavigateRecentFiles = () => {

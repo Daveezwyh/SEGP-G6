@@ -4,7 +4,6 @@ import { getToken } from "../../utils";
 import { useNavigate } from "react-router-dom";
 
 import Header from "../Homepage/Header";
-import Sidebar from "../Homepage/bars/Sidebar";
 import Footer from "../Homepage/footer";
 
 export default function Information() {
@@ -48,11 +47,20 @@ export default function Information() {
       },
     })
       .then((res) => {
-        if (!res.ok) throw new Error(`Server error: ${res.status}`);
-        return res.json();
-      })
+            if (res.status === 404) {
+                // When search ID is not found, show no data instead of an error
+                console.warn(`No data found for ID: ${searchId}`);
+                setData([]);
+                setLoading(false);
+                return null;
+            }
+            if (!res.ok) throw new Error(`Server error: ${res.status}`);
+            return res.json();
+        })
       .then((json) => {
-        console.log("API Response:", json);
+        if (!json) return; // If no data is returned, exit early
+
+            console.log("API Response:", json);
         if (searchId) {
           setData(json ? [json] : []);
         } else {
@@ -92,7 +100,6 @@ export default function Information() {
     <div className="min-h-screen bg-gray-100 dark:bg-gray-900 dark:text-white">
       <Header />
       <div className="flex">
-        <Sidebar />
         <div className="flex-1 p-9 bg-white dark:bg-gray-800 rounded-lg shadow-md">
           <h1 className="text-xl font-bold mb-4">Information Page</h1>
 
