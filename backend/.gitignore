@@ -1,4 +1,119 @@
+# Byte-compiled / optimized / DLL files
+*.py[cod]
+*.pyo
+*.pyd
+__pycache__/
+*.so
+
+# C extensions
+*.c
+
+# Distribution / packaging
+.Python
+build/
+develop-eggs/
+dist/
+downloads/
+eggs/
+.eggs/
+lib/
+lib64/
+parts/
+sdist/
+var/
+wheels/
+*.egg-info/
+.installed.cfg
+*.egg
+
+# Installer logs
+pip-log.txt
+pip-delete-this-directory.txt
+
+# Virtual environment
+venv/
+env/
+ENV/
+.venv/
+.env/
+
+# pyenv
+.python-version
+
+# Django specific
+*.log
+local_settings.py
+db.sqlite3
+db.sqlite3-journal
+media/
+staticfiles/
+static/
+live/
+
+# PyCharm specific
+.idea/
+
+# Visual Studio Code
+.vscode/
+
+# Environments
+.env
+*.env
+
+# macOS specific
 .DS_Store
-redis/
-postgre/
-~$*.xlsx
+
+# Windows specific
+Thumbs.db
+ehthumbs.db
+Desktop.ini
+$RECYCLE.BIN/
+
+# Logs
+*.log
+
+# Coverage reports
+htmlcov/
+.tox/
+.coverage
+.coverage.*
+.cache
+nosetests.xml
+coverage.xml
+*.cover
+.hypothesis/
+
+# Testing
+.pytest_cache/
+.cache/
+test_results/
+
+# Jupyter Notebook
+.ipynb_checkpoints
+
+# MyPy
+.mypy_cache/
+
+# Bandit (security linting)
+.bandit/
+
+# Heroku
+Procfile
+
+# IDE-specific files
+*.swp
+*.swo
+*.idea/
+*.vscode/
+
+# Cache
+*.cache
+.cache/
+
+# Celery related files
+celerybeat-schedule
+celerybeat-schedule.db
+celerybeat.pid
+
+logs/
+uploads/

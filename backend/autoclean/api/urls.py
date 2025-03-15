@@ -8,9 +8,9 @@ from rest_framework import permissions
 from drf_spectacular.views import SpectacularAPIView, SpectacularSwaggerView, SpectacularRedocView
 
 from api.views import (
-    UserViewSet, ImportViewSet, ImportScanResultUpdateView, ImportScanResultBulkUpdateView,
+    UserViewSet, ImportViewSet, ImportScanResultActionUpdateView, ImportScanResultActionBulkUpdateView,
     ImportUploadView,
-    TaskProgressRetrieveAPIView
+    TaskProgressRetrieveAPIView,
 )
 
 router = DefaultRouter()
@@ -25,6 +25,6 @@ urlpatterns = [
     path('token/refresh', TokenRefreshView.as_view(), name='token_refresh'),
     path('task-progress/<uuid:uuid>', TaskProgressRetrieveAPIView.as_view(), name='task_progress'),
     path("upload/import", ImportUploadView.as_view(), name='import-upload'),
-    path("import-scanresults/update/", ImportScanResultUpdateView.as_view(), name="importscanresult-update"),
-    path("import-scanresults/bulk-update/", ImportScanResultBulkUpdateView.as_view(), name="importscanresult-bulk-update"),
+    path("import-scanresult-action/update/", ImportScanResultActionUpdateView.as_view(), name="importscanresult-update"),
+    path("import-scanresult-action/bulk-update/", ImportScanResultActionBulkUpdateView.as_view(), name="importscanresult-bulk-update"),
 ]

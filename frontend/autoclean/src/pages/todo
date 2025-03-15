@@ -6,7 +6,16 @@ interface
 
 - progress bar
 - make it pop up page  only?
+- connect with api endpoints
 
+information.jsx
+- items/data need to be change to table form
+- add back button
+- navigate the upload file button back to homepage
 
-- add blank box to upload data
-- think and create more features in interface
+token
+- fetch token automatically
+
+figma
+report
+

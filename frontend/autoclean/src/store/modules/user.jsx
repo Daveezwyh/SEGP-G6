@@ -41,6 +41,6 @@ const fetchLogin = (loginForm) => {
     };
 };
 
-export { fetchLogin, setToken}
+export {fetchLogin, setToken}
 
 export default userReducer
