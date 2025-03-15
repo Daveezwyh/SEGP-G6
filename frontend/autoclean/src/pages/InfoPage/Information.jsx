@@ -11,7 +11,7 @@ export default function Information() {
   const [data, setData] = useState([]);
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState(null);
-  const [searchId, setSearchId] = useState("");
+  const [searchByName, setSearchByName] = useState("");
   const [page, setPage] = useState(1);
   const [pageSize, setPageSize] = useState(3);
   const [inputPage, setInputPage] = useState("1");
@@ -35,8 +35,8 @@ export default function Information() {
       return;
     }
 
-    let url = searchId
-      ? `http://35.213.150.144:8000/api/imports/${searchId}/`
+    let url = searchByName
+      ? `http://35.213.150.144:8000/api/imports/?query=${searchByName}`
       : `http://35.213.150.144:8000/api/imports/?page=${page}&page_size=${pageSize}`;
 
     fetch(url, {
@@ -47,26 +47,21 @@ export default function Information() {
       },
     })
       .then((res) => {
-            if (res.status === 404) {
-                // When search ID is not found, show no data instead of an error
-                console.warn(`No data found for ID: ${searchId}`);
-                setData([]);
-                setLoading(false);
-                return null;
-            }
-            if (!res.ok) throw new Error(`Server error: ${res.status}`);
-            return res.json();
-        })
-      .then((json) => {
-        if (!json) return; // If no data is returned, exit early
-
-            console.log("API Response:", json);
-        if (searchId) {
-          setData(json ? [json] : []);
-        } else {
-          setData(json.results || []);
-          setTotalCount(json.count || 0);
+        if (res.status === 404) {
+          console.warn(`No data found for name: ${searchByName}`);
+          setData([]);
+          setLoading(false);
+          return null;
         }
+        if (!res.ok) throw new Error(`Server error: ${res.status}`);
+        return res.json();
+      })
+      .then((json) => {
+        if (!json) return;
+
+        console.log("API Response:", json);
+        setData(json.results || []);
+        setTotalCount(json.count || 0);
         setLoading(false);
       })
       .catch((err) => {
@@ -77,11 +72,7 @@ export default function Information() {
 
   useEffect(() => {
     fetchData();
-  }, [page, pageSize, searchId]);
-
-  const filteredData = searchId
-    ? data.filter((item) => item.id.toString() === searchId)
-    : data;
+  }, [page, pageSize, searchByName]);
 
   const getPageNumbers = () => {
     if (totalPages <= 5) {
@@ -106,18 +97,11 @@ export default function Information() {
           {/* Search */}
           <div className="mb-4 flex items-center space-x-2">
             <input
-              type="number"
-              placeholder="Search by ID"
-              value={searchId}
-              onChange={(e) => {
-                const value = e.target.value.replace(/\D/g, "");
-                if (value === "" || (parseInt(value, 10) > 0 && parseInt(value, 10) <= totalCount)) {
-                  setSearchId(value);
-                }
-              }}
+              type="text"
+              placeholder="Search by Name"
+              value={searchByName}
+              onChange={(e) => setSearchByName(e.target.value)}
               className="p-2 border rounded w-full md:w-1/3 text-black"
-              min="1"
-              max={totalCount}
             />
           </div>
 
@@ -146,8 +130,8 @@ export default function Information() {
             <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
               {loading && <p>Loading...</p>}
               {error && <p className="text-red-500">Error: {error}</p>}
-              {!loading && !error && filteredData.length > 0 ? (
-                filteredData.map((item) => (
+              {!loading && !error && data.length > 0 ? (
+                data.map((item) => (
                   <div key={item.id} className="bg-gray-200 dark:bg-gray-700 rounded-lg p-4 shadow-md">
                     <strong>ID:</strong> {item.id} <br />
                     <strong>Description:</strong> {item.description || "N/A"} <br />
