@@ -1,5 +1,10 @@
 from django.contrib.auth.models import User
 from django.shortcuts import get_object_or_404
+from django.db.models import Q
+from django.db.models.expressions import RawSQL
+from django.http import StreamingHttpResponse
+from django.utils.text import slugify
+from django.utils.timezone import now
 from rest_framework import viewsets, status, generics
 from rest_framework.response import Response
 from rest_framework.views import APIView
@@ -9,6 +14,9 @@ from rest_framework.exceptions import NotFound
 from rest_framework.parsers import MultiPartParser
 from celery import chain
 from drf_spectacular.utils import extend_schema, OpenApiParameter, OpenApiTypes, OpenApiResponse, OpenApiExample
+import logging
+import pandas as pd
+import tempfile
 
 from .serializers import (
     UserSerializer, UploadImportSerializer, ImportSerializer, ImportDataSerializer,
@@ -17,7 +25,9 @@ from .serializers import (
 )
 from .tasks import read_file_to_import_data, copy_import_data_original, scan_import, clean_import
 from .models import TaskProgress, Import, ImportData, ImportScanResult, ImportScanResultAction
-from autoclean.utils import AutocleanAPIPagination
+from autoclean.utils import AutocleanAPIPagination, df_from_import_model
+
+logger = logging.getLogger('django')
 
 class UserViewSet(viewsets.ModelViewSet):
     queryset = User.objects.exclude(is_superuser=True)
@@ -110,14 +120,42 @@ class ImportUploadView(APIView):
         
         return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
 
+@extend_schema(
+    parameters=[
+        OpenApiParameter(
+            name="query",
+            type=str,
+            location=OpenApiParameter.QUERY,
+            description="Search query to filter results."
+        )
+    ]
+)
 class ImportViewSet(viewsets.ReadOnlyModelViewSet):
     queryset = Import.objects.all()
     serializer_class = ImportSerializer
     permission_classes = [IsAuthenticated]
     pagination_class = AutocleanAPIPagination
 
+    def get_queryset(self):
+        queryset = Import.objects.all()
+        query = self.request.query_params.get("query", None)
+
+        if query:
+            queryset = queryset.annotate(
+                filename=RawSQL("data->>'filename'", [])
+            ).filter(
+                Q(description__icontains=query) |
+                Q(filename__icontains=query)
+            )
+
+        return queryset
+    
     @extend_schema(
         parameters=[
+            OpenApiParameter(
+                name="query", type=str, location=OpenApiParameter.QUERY,
+                description="Search inside JSON data fields (e.g., Name, Age, Gender, Salary). Supports partial matching."
+            ),
             OpenApiParameter(name="page", type=int, location=OpenApiParameter.QUERY, description="Page number"),
             OpenApiParameter(name="page_size", type=int, location=OpenApiParameter.QUERY, description="Number of results per page"),
         ],
@@ -125,15 +163,28 @@ class ImportViewSet(viewsets.ReadOnlyModelViewSet):
     )
     @action(detail=True, methods=['get'], url_path='data')
     def import_data(self, request, pk=None):
-        import_instance = self.get_object()
+        import_instance = get_object_or_404(Import, id=pk)
+
         import_data = ImportData.objects.filter(import_model=import_instance).order_by('id')
 
+        query = request.query_params.get("query", None)
+        if query:
+            try:
+                import_data = import_data.extra(
+                    where=["data::TEXT ILIKE %s"], 
+                    params=[f"%{query}%"]
+                )
+                logger.info(f"After Filtering SQL: {import_data.query}")  # Log SQL after filtering
+            except Exception as e:
+                logger.error(f"Error applying query filter: {e}")
+                return Response({"error": f"Invalid query: {str(e)}"}, status=400)
+        
         paginator = AutocleanAPIPagination()
         page = paginator.paginate_queryset(import_data, request)
         if page is not None:
             serializer = ImportDataSerializer(page, many=True)
             return paginator.get_paginated_response(serializer.data)
-        
+
         serializer = ImportDataSerializer(import_data, many=True)
         return Response(serializer.data)
     
@@ -245,6 +296,35 @@ class ImportViewSet(viewsets.ReadOnlyModelViewSet):
         })
 
         return Response(response_data, status=status.HTTP_201_CREATED)
+    
+    @action(detail=True, methods=['get'], url_path='export')
+    def export(self, request, pk=None):
+        try:
+            import_instance = Import.objects.get(id=pk)
+
+            if import_instance.status != Import.Status.COMPLETED:
+                return Response({"error": "Import has not yet been processed."}, status=status.HTTP_400_BAD_REQUEST)
+            
+            description_slug = slugify(import_instance.description)
+            timestamp = now().strftime('%Y%m%d%H%M')
+            filename = f"{description_slug}_cleaned_{timestamp}.xlsx"
+
+            df = df_from_import_model(pk)
+
+            def generate():
+                with tempfile.NamedTemporaryFile(delete=False) as tmp:
+                    with pd.ExcelWriter(tmp.name, engine='xlsxwriter') as writer:
+                        df.to_excel(writer, index=False)
+                    with open(tmp.name, 'rb') as f:
+                        yield from f
+
+            response = StreamingHttpResponse(generate(), content_type='application/vnd.openxmlformats-officedocument.spreadsheetml.sheet')
+            response['Content-Disposition'] = f'attachment; filename={filename}'
+            return response
+        except Import.DoesNotExist:
+            return Response({"error": "Import not found"}, status=status.HTTP_404_NOT_FOUND)
+        except Exception as e:
+            return Response({"error": str(e)}, status=status.HTTP_500_INTERNAL_SERVER_ERROR)
 
 class ImportScanResultActionUpdateView(APIView):
     permission_classes = [IsAuthenticated]
