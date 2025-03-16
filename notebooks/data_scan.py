@@ -5,6 +5,7 @@ from ScanResult import *
 
 def scan_df_for_duplicates(df: pd.DataFrame) -> List[ScanResult]:
     scan_results = []
+    df = df.dropna(axis=1, how='all')
     duplicated_rows = df[df.duplicated(keep="first")]
     
     for index in duplicated_rows.index:
@@ -23,7 +24,7 @@ def scan_df_for_duplicates(df: pd.DataFrame) -> List[ScanResult]:
                 row=index,
                 col=-1,  # No specific column as the entire row is duplicated
                 message=f"Row {index + 1} is duplicated",
-                action_type=SRActionType.DEFAULT,
+                action_type=SRActionType.ONE_MANDATORY,
                 actions=actions
             )
         )
@@ -121,7 +122,7 @@ def scan_df_for_missing(df: pd.DataFrame) -> List[ScanResult]:
                 row=row_idx,
                 col=col_name,
                 message=f"Missing value in row {row_idx+1}, column '{col_name}'",
-                action_type=SRActionType.DEFAULT,
+                action_type=SRActionType.ONE_MANDATORY,
                 actions=actions
             )
         )
@@ -160,16 +161,17 @@ def scan_df_for_outliers(df: pd.DataFrame) -> List[ScanResult]:
                     row=idx,
                     col=col,
                     message=f"Outlier detected in column '{col}' at row {idx+1}",
-                    action_type=SRActionType.DEFAULT,
+                    action_type=SRActionType.ONE_MANDATORY,
                     actions=actions
                 )
             )
     
     return scan_results
 
-def scan_df_for_categorical(df: pd.DataFrame, categorical_dtypes: list = ['object', 'category', 'bool']) -> List[ScanResult]:
+def scan_df_for_categorical(df: pd.DataFrame) -> List[ScanResult]:
     scan_results = []
-    max_categories = int(len(df) * 0.1)
+    # max_categories = int(len(df) * 0.1)
+    categorical_dtypes: list = ['object', 'category', 'bool']
     
     non_numeric_cols = df.select_dtypes(include=categorical_dtypes)
 
@@ -178,8 +180,8 @@ def scan_df_for_categorical(df: pd.DataFrame, categorical_dtypes: list = ['objec
             continue
         
         unique_count = df[col].nunique()
-        if unique_count > max_categories:
-            continue
+        # if unique_count > max_categories:
+        #     continue
         
         categories = df[col].dropna().unique()
         categories_str = ", ".join(map(str, categories[:10]))
@@ -215,7 +217,7 @@ def scan_df_for_categorical(df: pd.DataFrame, categorical_dtypes: list = ['objec
                 row=-1,
                 col=col,
                 message=f"Categorical feature '{col}' detected with {unique_count} categories: {categories_str}",
-                action_type=SRActionType.DEFAULT,
+                action_type=SRActionType.ONE_MANDATORY,
                 actions=actions
             )
         )
@@ -255,7 +257,7 @@ def scan_df_for_target(df: pd.DataFrame, target) -> List[ScanResult]:
                 row=row_idx,
                 col=col_name,
                 message=f"Target value '{target}' found in row {row_idx+1}, column '{col_name}'",
-                action_type=SRActionType.DEFAULT,
+                action_type=SRActionType.MANY_OPTIONAL,
                 actions=actions
             )
         )
