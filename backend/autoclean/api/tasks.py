@@ -203,7 +203,7 @@ def clean_import(self, args):
             if df.empty:
                 raise ValueError("The DataFrame is empty and cannot be cleaned.")
 
-            imp_scan_results = import_instance.scan_results.all()
+            imp_scan_results = import_instance.scan_results.all().order_by('id')
 
             for imp_scan_result in imp_scan_results:
                 scan_result: ScanResult = imp_scan_result.transform()
