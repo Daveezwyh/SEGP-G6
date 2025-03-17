@@ -65,7 +65,7 @@ export default function Sidebar({ isOpen, toggleSidebar }) {
 
             {showLogout && (
                 <div className="fixed top-0 left-0 w-full h-full flex justify-center items-center bg-black bg-opacity-50 z-50">
-                    <div className="card text-center shadow-lg p-4 bg-white text-black dark:bg-slate-700 dark:text-cyan-400">
+                    <div className="card text-center shadow-lg p-4 dark:bg-slate-700 dark:text-cyan-400">
                         <div className="card-body flex flex-col items-center">
                             <HiUserCircle size="100" className="text-gray-400 dark:text-white mb-3" />
                             <p className="card-text mb-4">Are you sure you want to log out?</p>

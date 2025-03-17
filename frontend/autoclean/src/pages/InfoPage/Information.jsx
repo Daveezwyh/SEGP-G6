@@ -11,7 +11,7 @@ export default function Information() {
   const [data, setData] = useState([]);
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState(null);
-  const [searchId, setSearchId] = useState("");
+  const [searchByName, setSearchByName] = useState("");
   const [page, setPage] = useState(1);
   const [pageSize, setPageSize] = useState(3);
   const [inputPage, setInputPage] = useState("1");
@@ -35,8 +35,8 @@ export default function Information() {
       return;
     }
 
-    let url = searchId
-      ? `http://35.213.150.144:8000/api/imports/${searchId}/`
+    let url = searchByName
+      ? `http://35.213.150.144:8000/api/imports/?query=${searchByName}`
       : `http://35.213.150.144:8000/api/imports/?page=${page}&page_size=${pageSize}`;
 
     fetch(url, {
@@ -47,26 +47,21 @@ export default function Information() {
       },
     })
       .then((res) => {
-            if (res.status === 404) {
-                // When search ID is not found, show no data instead of an error
-                console.warn(`No data found for ID: ${searchId}`);
-                setData([]);
-                setLoading(false);
-                return null;
-            }
-            if (!res.ok) throw new Error(`Server error: ${res.status}`);
-            return res.json();
-        })
-      .then((json) => {
-        if (!json) return; // If no data is returned, exit early
-
-            console.log("API Response:", json);
-        if (searchId) {
-          setData(json ? [json] : []);
-        } else {
-          setData(json.results || []);
-          setTotalCount(json.count || 0);
+        if (res.status === 404) {
+          console.warn(`No data found for name: ${searchByName}`);
+          setData([]);
+          setLoading(false);
+          return null;
         }
+        if (!res.ok) throw new Error(`Server error: ${res.status}`);
+        return res.json();
+      })
+      .then((json) => {
+        if (!json) return;
+
+        console.log("API Response:", json);
+        setData(json.results || []);
+        setTotalCount(json.count || 0);
         setLoading(false);
       })
       .catch((err) => {
@@ -77,7 +72,7 @@ export default function Information() {
 
   useEffect(() => {
     fetchData();
-  }, [page, pageSize, searchId]);
+  }, [page, pageSize, searchByName]);
 
   const filteredData = searchId
     ? data.filter((item) => item.id.toString() === searchId)
@@ -97,14 +92,14 @@ export default function Information() {
   };
 
   return (
-    <div className="min-h-screen bg-gray-100 dark:bg-gray-900 dark:text-white">
+    <div className="min-h-screen  dark:bg-gray-700  dark:text-cyan-400">
       <Header />
       <div className="flex">
-        <div className="flex-1 p-9 bg-white dark:bg-gray-800 rounded-lg shadow-md">
+        <div className="flex-1 p-9">
           <h1 className="text-xl font-bold mb-4">Information Page</h1>
 
           {/* Search */}
-          <div className="mb-4 flex items-center space-x-2">
+          <div className="mb-4 flex items-center space-x-2 dark:bg">
             <input
               type="number"
               placeholder="Search by ID"
@@ -115,7 +110,7 @@ export default function Information() {
                   setSearchId(value);
                 }
               }}
-              className="p-2 border rounded w-full md:w-1/3 text-black"
+              className="p-2 border rounded w-20 dark:bg-gray-800"
               min="1"
               max={totalCount}
             />
@@ -125,48 +120,59 @@ export default function Information() {
           <div className="mb-4 flex items-center space-x-2">
             <span>Page Size:</span>
             <input
-              type="number"
-              value={pageSize}
-              onChange={(e) => {
-                const newSize = parseInt(e.target.value, 10);
-                if (!isNaN(newSize) && newSize > 0 && newSize <= totalCount) {
-                  setPageSize(newSize);
-                  setPage(1);
-                  setInputPage("1");
-                }
-              }}
+              type="text"
+              placeholder="Search by Name"
+              value={searchByName}
+              onChange={(e) => setSearchByName(e.target.value)}
               className="p-2 border rounded w-20 text-black"
-              min="1"
-              max={totalCount}
             />
           </div>
 
           {/* Data */}
-          <div className="bg-white dark:bg-gray-800 rounded-lg shadow p-4 text-black dark:text-gray-200">
-            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
+          <div className="dark:bg-gray-800 rounded-lg shadow p-4 dark:text-cyan-400">
+               {/* Header */}
+               <div className="grid grid-cols-6 items-center px-4 py-2 text-center">
+                   <span className="w-40">File Name</span>
+                   <span className="w-10">ID</span>
+                   <span className="w-20">User</span>
+                   <span className="w-20">Total Rows</span>
+                   <span className="w-40">Time Uploaded</span>
+                   <span></span>
+               </div>
+ 
+               <hr className="my-2" />
+
               {loading && <p>Loading...</p>}
               {error && <p className="text-red-500">Error: {error}</p>}
-              {!loading && !error && filteredData.length > 0 ? (
-                filteredData.map((item) => (
-                  <div key={item.id} className="bg-gray-200 dark:bg-gray-700 rounded-lg p-4 shadow-md">
-                    <strong>ID:</strong> {item.id} <br />
-                    <strong>Description:</strong> {item.description || "N/A"} <br />
-                    <strong>Filename:</strong> {item.data?.filename || "N/A"} <br />
-                    <strong>Total Rows:</strong> {item.data?.total_rows || 0} <br />
-                    <strong>Uploaded By:</strong> {item.uploaded_by || "Unknown"} <br />
-                    <strong>Uploaded At:</strong> {new Date(item.uploaded_at).toLocaleString()} <br />
-                    <button
+              
+              {!loading && !error && data.length > 0 ? (
+                
+                data
+                  .filter((item) =>
+                      searchByName
+                        ? item.data?.filename?.toLowerCase().includes(searchByName.toLowerCase())
+                        : true
+                  )
+                  .map((item) => (
+                      <div key={item.id} className="grid grid-cols-6 items-center px-4 py-2 text-center rounded-lg shadow dark:bg-gray-800 m-3">
+                      <span className="w-40 truncate">{item.data?.filename || "N/A"}</span>
+                      <span className="w-10">{item.id}</span>
+                      <span className="w-20">{item.uploaded_by || "Unknown"}</span>
+                      <span className="w-20">{item.data?.total_rows || 0}</span>
+                      <span className="w-40">{new Date(item.uploaded_at).toLocaleString()}</span>
+                        <span>
+                        <button
                       onClick={() => navigate(`/info/${item.id}`)}
                       className="mt-2 px-4 py-2 bg-blue-500 text-white rounded"
-                    >
+                      >
                       View
-                    </button>
-                  </div>
-                ))
+                      </button>
+                      </span>
+                      </div>
+                      ))
               ) : (
                 <p>No data available.</p>
               )}
-            </div>
           </div>
 
           {/* Page Navigation */}
@@ -175,7 +181,7 @@ export default function Information() {
               <button
                 onClick={() => setPage((prev) => Math.max(prev - 1, 1))}
                 disabled={page === 1}
-                className="px-4 py-2 bg-gray-300 dark:bg-gray-700 rounded disabled:opacity-50"
+                className="px-4 py-2 bg-gray-300 dark:bg-gray-800 rounded disabled:opacity-50"
               >
                 {'<'}
               </button>
@@ -183,7 +189,7 @@ export default function Information() {
                 <button
                   key={index}
                   onClick={() => typeof num === "number" && setPage(num)}
-                  className={`px-3 py-1 rounded ${num === page ? "bg-blue-500 text-white" : "bg-gray-300 dark:bg-gray-700"}`}
+                  className={`px-3 py-1 rounded ${num === page ? "bg-blue-500 text-white" : "bg-gray-300 dark:bg-gray-800"}`}
                   disabled={num === "..."}
                 >
                   {num}
@@ -192,7 +198,7 @@ export default function Information() {
               <button
                 onClick={() => setPage((prev) => prev + 1)}
                 disabled={page === totalPages}
-                className="px-4 py-2 bg-gray-300 dark:bg-gray-700 rounded"
+                className="px-4 py-2 bg-gray-300 dark:bg-gray-800 rounded"
               >
                 {'>'}
               </button>
@@ -205,7 +211,7 @@ export default function Information() {
                 type="number"
                 value={inputPage}
                 onChange={(e) => setInputPage(e.target.value)}
-                className="p-2 border rounded w-24 text-black"
+                className="p-2 border rounded w-24 dark:bg-gray-800"
                 min="1"
                 max={totalPages}
                 placeholder="Page Number"

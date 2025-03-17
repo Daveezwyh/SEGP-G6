@@ -20,6 +20,9 @@ export default function InfoDetails() {
     const [headers, setHeaders] = useState([]);
     const [showTabs, setShowTabs] = useState(false);
     const [activeTab, setActiveTab] = useState(0);
+    const [scanResults, setScanResult] = useState([])
+    const [loadingScan, setLoadingScan] = useState(false)
+    const [errorScan, setErrorScan] = useState(null)
 
     useEffect(() => {
         if (!id) return;
