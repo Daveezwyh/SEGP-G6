@@ -83,10 +83,10 @@ export default function InfoDetails() {
     };
 
     return (
-        <div className="min-h-screen dark:bg-gray-700 dark:text-cyan-400">
+        <div className="min-h-screen min-w-[1000px] dark:bg-slate-700 dark:text-cyan-400">
             <Header />
             <div className="flex">
-                <div className="flex-1 p-9  dark:bg-gray-700  shadow-md">
+                <div className="flex-1 p-9  dark:bg-slate-700  shadow-md">
                     <h1 className="text-xl font-bold mb-4">File Details (ID: {id})</h1>
 
                     <div className="mb-4 flex items-center justify-between">
@@ -150,7 +150,7 @@ export default function InfoDetails() {
                                     <thead>
                                         <tr>
                                             {headers.map((header) => (
-                                                <th key={header} className="border px-4 py-2 bg-gray-200 dark:bg-gray-700">
+                                                <th key={header} className="border px-4 py-2 bg-gray-400 dark:bg-gray-700">
                                                     {header}
                                                 </th>
                                             ))}
@@ -175,7 +175,7 @@ export default function InfoDetails() {
                                 <div className="pt-4">
                                 <button
                                     onClick={() => navigate(-1)}
-                                    className="mb-1 px-4 py-2 bg-gray-500 rounded"
+                                    className="mb-1 px-4 py-2 bg-gray-700 rounded"
                                 >
                                     Back
                                 </button>

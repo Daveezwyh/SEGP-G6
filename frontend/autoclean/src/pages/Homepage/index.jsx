@@ -8,7 +8,7 @@ import React from 'react';
 
 export default function Homepage() {
     return (
-        <div className="min-h-screen dark:bg-gray-700">
+        <div className="min-h-screen dark:bg-slate-700">
             <Header />
             <Body />
             <Footer/>

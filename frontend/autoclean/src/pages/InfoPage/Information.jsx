@@ -97,7 +97,7 @@ export default function Information() {
   };
 
   return (
-    <div className="min-h-screen  dark:bg-gray-700  dark:text-cyan-400">
+    <div className="min-h-screen min-w-[800px] dark:bg-slate-700  dark:text-cyan-400">
       <Header />
       <div className="flex">
         <div className="flex-1 p-9">
