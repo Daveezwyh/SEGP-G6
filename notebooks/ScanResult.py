@@ -1,14 +1,13 @@
 from enum import Enum
 
 class SRActionType(Enum):
-    DEFAULT = 0
     ONE_OPTIONAL = 1
     ONE_MANDATORY = 2
     MANY_OPTIONAL = 3
     MANY_MANDATORY = 4
 
 class ScanResult:
-    def __init__(self, row=0, col=0, message="", action_type=SRActionType.DEFAULT, actions=None):
+    def __init__(self, row=0, col=0, message="", action_type=SRActionType.ONE_OPTIONAL, actions=None):
         self.row = row
         self.col = col
         self.message = message
