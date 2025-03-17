@@ -3,5 +3,6 @@ interface
 - add scan result with endpoints
 - make sure the pop up tab page no error (pop up after pressing clean button)
 - design multiple selection for cleaning
+- make the information page design nicer
 - report
 

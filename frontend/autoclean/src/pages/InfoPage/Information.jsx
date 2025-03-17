@@ -74,10 +74,6 @@ export default function Information() {
     fetchData();
   }, [page, pageSize, searchByName]);
 
-  const filteredData = searchId
-    ? data.filter((item) => item.id.toString() === searchId)
-    : data;
-
   const getPageNumbers = () => {
     if (totalPages <= 5) {
       return Array.from({ length: totalPages }, (_, i) => i + 1);
@@ -101,18 +97,11 @@ export default function Information() {
           {/* Search */}
           <div className="mb-4 flex items-center space-x-2 dark:bg">
             <input
-              type="number"
-              placeholder="Search by ID"
-              value={searchId}
-              onChange={(e) => {
-                const value = e.target.value.replace(/\D/g, "");
-                if (value === "" || (parseInt(value, 10) > 0 && parseInt(value, 10) <= totalCount)) {
-                  setSearchId(value);
-                }
-              }}
+              type="text"
+              placeholder="Search by Name"
+              value={searchByName}
+              onChange={(e) => setSearchByName(e.target.value)}
               className="p-2 border rounded w-20 dark:bg-gray-800"
-              min="1"
-              max={totalCount}
             />
           </div>
 
@@ -120,56 +109,62 @@ export default function Information() {
           <div className="mb-4 flex items-center space-x-2">
             <span>Page Size:</span>
             <input
-              type="text"
-              placeholder="Search by Name"
-              value={searchByName}
-              onChange={(e) => setSearchByName(e.target.value)}
+              type="number"
+              value={pageSize}
+              onChange={(e) => {
+                const newSize = parseInt(e.target.value, 10);
+                if (!isNaN(newSize) && newSize > 0 && newSize <= totalCount) {
+                  setPageSize(newSize);
+                  setPage(1);
+                  setInputPage("1");
+                }
+            }}
               className="p-2 border rounded w-20 text-black"
+              min="1"
+              max={totalCount}
             />
           </div>
 
           {/* Data */}
           <div className="dark:bg-gray-800 rounded-lg shadow p-4 dark:text-cyan-400">
                {/* Header */}
-               <div className="grid grid-cols-6 items-center px-4 py-2 text-center">
-                   <span className="w-40">File Name</span>
-                   <span className="w-10">ID</span>
-                   <span className="w-20">User</span>
-                   <span className="w-20">Total Rows</span>
-                   <span className="w-40">Time Uploaded</span>
-                   <span></span>
-               </div>
- 
-               <hr className="my-2" />
+              <div className="grid grid-cols-6 items-center px-4 py-2 text-center">
+                  <span className="w-40">File Name</span>
+                  <span className="w-10">ID</span>
+                  <span className="w-20">User</span>
+                  <span className="w-20">Total Rows</span>
+                  <span className="w-40">Time Uploaded</span>
+                  <span></span>
+            </div>
+
+              <hr className="my-2" />
 
               {loading && <p>Loading...</p>}
               {error && <p className="text-red-500">Error: {error}</p>}
-              
               {!loading && !error && data.length > 0 ? (
-                
                 data
-                  .filter((item) =>
-                      searchByName
+                .filter((item) =>
+                    searchByName
                         ? item.data?.filename?.toLowerCase().includes(searchByName.toLowerCase())
                         : true
-                  )
-                  .map((item) => (
-                      <div key={item.id} className="grid grid-cols-6 items-center px-4 py-2 text-center rounded-lg shadow dark:bg-gray-800 m-3">
-                      <span className="w-40 truncate">{item.data?.filename || "N/A"}</span>
-                      <span className="w-10">{item.id}</span>
-                      <span className="w-20">{item.uploaded_by || "Unknown"}</span>
-                      <span className="w-20">{item.data?.total_rows || 0}</span>
-                      <span className="w-40">{new Date(item.uploaded_at).toLocaleString()}</span>
+                )
+                .map((item) => (
+                    <div key={item.id} className="grid grid-cols-6 items-center px-4 py-2 text-center rounded-lg shadow dark:bg-gray-800 m-3">
+                        <span className="w-40 truncate">{item.data?.filename || "N/A"}</span>
+                        <span className="w-10">{item.id}</span>
+                        <span className="w-20">{item.uploaded_by || "Unknown"}</span>
+                        <span className="w-20">{item.data?.total_rows || 0}</span>
+                        <span className="w-40">{new Date(item.uploaded_at).toLocaleString()}</span>
                         <span>
-                        <button
-                      onClick={() => navigate(`/info/${item.id}`)}
-                      className="mt-2 px-4 py-2 bg-blue-500 text-white rounded"
-                      >
-                      View
-                      </button>
-                      </span>
-                      </div>
-                      ))
+                            <button
+                                onClick={() => navigate(`/info/${item.id}`)}
+                                className="mt-2 px-4 py-2 bg-blue-500 text-white rounded"
+                            >
+                                View
+                            </button>
+                        </span>
+                    </div>
+                ))
               ) : (
                 <p>No data available.</p>
               )}
