@@ -88,10 +88,10 @@ export default function Information() {
   };
 
   return (
-    <div className="min-h-screen bg-gray-100 dark:bg-gray-900 dark:text-white">
+    <div className="min-h-screen  dark:bg-gray-700  dark:text-cyan-400">
       <Header />
       <div className="flex">
-        <div className="flex-1 p-9 bg-white dark:bg-gray-800 rounded-lg shadow-md">
+        <div className="flex-1 p-9">
           <h1 className="text-xl font-bold mb-4">Information Page</h1>
 
           {/* Search */}
@@ -106,7 +106,7 @@ export default function Information() {
           </div>
 
           {/* Page Size */}
-          <div className="mb-4 flex items-center space-x-2">
+          <div className="mb-4 flex items-center space-x-2 dark:bg">
             <span>Page Size:</span>
             <input
               type="number"
@@ -119,38 +119,56 @@ export default function Information() {
                   setInputPage("1");
                 }
               }}
-              className="p-2 border rounded w-20 text-black"
+              className="p-2 border rounded w-20 dark:bg-gray-800"
               min="1"
               max={totalCount}
             />
           </div>
 
           {/* Data */}
-          <div className="bg-white dark:bg-gray-800 rounded-lg shadow p-4 text-black dark:text-gray-200">
-            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
+          <div className="dark:bg-gray-800 rounded-lg shadow p-4 dark:text-cyan-400">
+              {/* Header */}
+              <div className="grid grid-cols-6 items-center px-4 py-2 text-center">
+                  <span className="w-40">File Name</span>
+                  <span className="w-10">ID</span>
+                  <span className="w-20">User</span>
+                  <span className="w-20">Total Rows</span>
+                  <span className="w-40">Time Uploaded</span>
+                  <span></span>
+              </div>
+
+              <hr className="my-2" />
+
               {loading && <p>Loading...</p>}
               {error && <p className="text-red-500">Error: {error}</p>}
+              
               {!loading && !error && data.length > 0 ? (
-                data.map((item) => (
-                  <div key={item.id} className="bg-gray-200 dark:bg-gray-700 rounded-lg p-4 shadow-md">
-                    <strong>ID:</strong> {item.id} <br />
-                    <strong>Description:</strong> {item.description || "N/A"} <br />
-                    <strong>Filename:</strong> {item.data?.filename || "N/A"} <br />
-                    <strong>Total Rows:</strong> {item.data?.total_rows || 0} <br />
-                    <strong>Uploaded By:</strong> {item.uploaded_by || "Unknown"} <br />
-                    <strong>Uploaded At:</strong> {new Date(item.uploaded_at).toLocaleString()} <br />
-                    <button
-                      onClick={() => navigate(`/info/${item.id}`)}
-                      className="mt-2 px-4 py-2 bg-blue-500 text-white rounded"
-                    >
-                      View
-                    </button>
-                  </div>
-                ))
+                  data
+                      .filter((item) =>
+                          searchByName
+                              ? item.data?.filename?.toLowerCase().includes(searchByName.toLowerCase())
+                              : true
+                      )
+                      .map((item) => (
+                          <div key={item.id} className="grid grid-cols-6 items-center px-4 py-2 text-center rounded-lg shadow dark:bg-gray-800 m-3">
+                              <span className="w-40 truncate">{item.data?.filename || "N/A"}</span>
+                              <span className="w-10">{item.id}</span>
+                              <span className="w-20">{item.uploaded_by || "Unknown"}</span>
+                              <span className="w-20">{item.data?.total_rows || 0}</span>
+                              <span className="w-40">{new Date(item.uploaded_at).toLocaleString()}</span>
+                              <span>
+                                  <button
+                                      onClick={() => navigate(`/info/${item.id}`)}
+                                      className="mt-2 px-4 py-2 bg-blue-500 text-white rounded"
+                                  >
+                                      View
+                                  </button>
+                              </span>
+                          </div>
+                      ))
               ) : (
-                <p>No data available.</p>
+                  <p>No data available.</p>
               )}
-            </div>
           </div>
 
           {/* Page Navigation */}
@@ -159,7 +177,7 @@ export default function Information() {
               <button
                 onClick={() => setPage((prev) => Math.max(prev - 1, 1))}
                 disabled={page === 1}
-                className="px-4 py-2 bg-gray-300 dark:bg-gray-700 rounded disabled:opacity-50"
+                className="px-4 py-2 bg-gray-300 dark:bg-gray-800 rounded disabled:opacity-50"
               >
                 {'<'}
               </button>
@@ -167,7 +185,7 @@ export default function Information() {
                 <button
                   key={index}
                   onClick={() => typeof num === "number" && setPage(num)}
-                  className={`px-3 py-1 rounded ${num === page ? "bg-blue-500 text-white" : "bg-gray-300 dark:bg-gray-700"}`}
+                  className={`px-3 py-1 rounded ${num === page ? "bg-blue-500 text-white" : "bg-gray-300 dark:bg-gray-800"}`}
                   disabled={num === "..."}
                 >
                   {num}
@@ -176,7 +194,7 @@ export default function Information() {
               <button
                 onClick={() => setPage((prev) => prev + 1)}
                 disabled={page === totalPages}
-                className="px-4 py-2 bg-gray-300 dark:bg-gray-700 rounded"
+                className="px-4 py-2 bg-gray-300 dark:bg-gray-800 rounded"
               >
                 {'>'}
               </button>
@@ -189,7 +207,7 @@ export default function Information() {
                 type="number"
                 value={inputPage}
                 onChange={(e) => setInputPage(e.target.value)}
-                className="p-2 border rounded w-24 text-black"
+                className="p-2 border rounded w-24 dark:bg-gray-800"
                 min="1"
                 max={totalPages}
                 placeholder="Page Number"

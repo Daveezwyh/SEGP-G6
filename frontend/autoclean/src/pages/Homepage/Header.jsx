@@ -57,7 +57,7 @@ export default function Header() {
 
             {showSetting && (
                 <div className="relative">
-                    <div className="absolute top-0 right-0 mr-4 w-64 card text-center shadow-lg p-4 bg-white text-black dark:bg-slate-700 dark:text-cyan-400">
+                    <div className="absolute top-0 right-0 mr-4 w-64 card text-center shadow-lg p-4 dark:bg-slate-700 dark:text-cyan-400">
                         <div className="card-body flex flex-col items-center">
                             <h4>Light and Dark Mode</h4>
                             <label className="inline-flex items-center cursor-pointer">
