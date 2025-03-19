@@ -11,6 +11,7 @@ export default function InfoDetails() {
     const { id } = useParams();
     const navigate = useNavigate();
     const token = useSelector((state) => state.user.token) || getToken();
+
     const [details, setDetails] = useState(null);
     const [loading, setLoading] = useState(false);
     const [error, setError] = useState(null);
@@ -18,6 +19,7 @@ export default function InfoDetails() {
     const [pageSize, setPageSize] = useState(3);
     const [inputPage, setInputPage] = useState("1");
     const [headers, setHeaders] = useState([]);
+
     const [showTabs, setShowTabs] = useState(false);
     const [activeTab, setActiveTab] = useState(0);
     const [scanResults, setScanResult] = useState([])
@@ -26,6 +28,8 @@ export default function InfoDetails() {
 
     useEffect(() => {
         if (!id) return;
+        fetchDetails();
+    }, [id, page, pageSize]);
 
         const fetchDetails = async () => {
             setLoading(true);
@@ -43,33 +47,22 @@ export default function InfoDetails() {
                     }
                 );
 
-                if (res.status === 401) {
-                    localStorage.removeItem("token");
-                    sessionStorage.removeItem("token");
-                    window.location.href = "/login";
-                    throw new Error("Unauthorized: Token expired or invalid.");
-                }
-                if (!res.ok) {
-                    throw new Error(`Server error: ${res.status}`);
-                }
+                if (!res.ok) throw new Error(`Server error: ${res.status}`);
 
-                const data = await res.json();
-                setDetails(data);
+            const data = await res.json();
+            setDetails(data);
 
-                if (data.results && data.results.length > 0) {
-                    const firstRow = data.results[0].data;
-                    setHeaders(Object.keys(firstRow));
-                }
-            } catch (err) {
-                setError(err.message);
-            } finally {
-                setLoading(false);
+            if (data.results?.length > 0) {
+                setHeaders(Object.keys(data.results[0].data));
             }
-        };
+        } catch (err) {
+            setError(err.message);
+        } finally {
+            setLoading(false);
+        }
+    };
 
-        fetchDetails();
-    }, [id, page, pageSize]);
-
+        
     const totalPages = details ? Math.ceil(details.count / pageSize) : 1;
 
     const getPageNumbers = () => {
@@ -85,11 +78,63 @@ export default function InfoDetails() {
         return [1, "...", page - 1, page, page + 1, "...", totalPages];
     };
 
+    const fetchScanResults = async () => {
+        setLoadingScan(true);
+        setErrorScan(null);
+        try {
+            const res = await fetch(
+                `http://35.213.150.144:8000/api/imports/${id}/scan-results/?page=1&page_size=10`,
+                {
+                    method: "GET",
+                    headers: {
+                        "Content-Type": "application/json",
+                        Authorization: `Bearer ${token}`,
+                    },
+                }
+            );
+
+            if (!res.ok) {
+                throw new Error(`Server error: ${res.status}`);
+            }
+
+            const data = await res.json();
+
+            // ✅ Ensure `data.results` exists before mapping
+            const messages = Array.isArray(data.results)
+                ? data.results.map((item) => item.message)
+                : [];
+
+            setScanResult(messages);
+        } catch (err) {
+            setErrorScan(err.message);
+        } finally {
+            setLoadingScan(false);
+        }
+    };
+
+    const handleClean = () => {
+        Swal.fire({
+            title: 'Confirm?',
+            text: 'Do you want to clean the data?',
+            icon: 'info',
+            showCancelButton: true,
+            confirmButtonColor: '#3085d6',
+            cancelButtonColor: '#d33',
+            confirmButtonText: 'Yes',
+        }).then((result) => {
+            if (result.isConfirmed) {
+                setActiveTab(0);
+                setShowTabs(true);
+                fetchScanResults();
+            }
+        });
+    };
+
     return (
-        <div className="min-h-screen bg-gray-100 dark:bg-gray-900 dark:text-white">
+        <div className="min-h-screen min-w-[1000px] dark:bg-slate-700 dark:text-cyan-400">
             <Header />
             <div className="flex">
-                <div className="flex-1 p-9 bg-white dark:bg-gray-800 rounded-lg shadow-md">
+                <div className="flex-1 p-9 bg-white dark:bg-slate-800 rounded-lg shadow-md">
                     <h1 className="text-xl font-bold mb-4">File Details (ID: {id})</h1>
 
                     <div className="mb-4 flex items-center justify-between">
@@ -112,24 +157,7 @@ export default function InfoDetails() {
                     </div>
 
                     <button
-                        onClick={() => {
-                            Swal.fire({
-                            title: 'Confirm?',
-                            text: 'Do you want clean data?',
-                            icon: 'info',
-                            showCancelButton: true,
-                            confirmButtonColor: '#3085d6',
-                            cancelButtonColor: '#d33',
-                            confirmButtonText: 'Yes',
-                        }).then((result) => {
-                            if(result.isConfirmed){
-                            setPageSize(3); // Reset to default page size
-                            setPage(1); // Reset to the first page
-                            setInputPage("1"); // Reset the input field
-                            setShowTabs(true);
-                        }
-                      });
-                    }}
+                        onClick={handleClean}
                         className="px-4 py-2 bg-red-500 hover:bg-red-600 text-white rounded"
                     >
                         Clean
@@ -153,7 +181,7 @@ export default function InfoDetails() {
                                     <thead>
                                         <tr>
                                             {headers.map((header) => (
-                                                <th key={header} className="border px-4 py-2 bg-gray-200 dark:bg-gray-700">
+                                                <th key={header} className="border px-4 py-2 bg-gray-400 dark:bg-gray-700">
                                                     {header}
                                                 </th>
                                             ))}
@@ -178,7 +206,7 @@ export default function InfoDetails() {
                                 <div className="pt-4">
                                 <button
                                     onClick={() => navigate(-1)}
-                                    className="mb-1 px-4 py-2 bg-gray-500 text-white rounded"
+                                    className="mb-1 px-4 py-2 bg-gray-700 text-white rounded"
                                 >
                                     Back
                                 </button>
@@ -242,36 +270,48 @@ export default function InfoDetails() {
                     </div>
 
                     {showTabs && (
-                <div className="mt-6 border-b border-gray-300">
-                    <ul className="flex space-x-6 border-b">
-                        {["Errors", "Dropdown", "Link", "Disabled"].map((tab, index) => (
-                            <li
-                                key={index}
-                                className={`p-3 px-3 cursor-pointer transition-all duration-300
-                                    ${
-                                        activeTab === index
-                                            ? "border-b-2 border-blue-500 text-black font-semibold bg-gray-100"
-                                            : "text-blue-500 hover:text-blue-700"
-                                    } 
-                                    ${tab === "Disabled" ? "text-gray-400 cursor-not-allowed" : ""}
-                                `}
-                                onClick={() => tab !== "Disabled" && setActiveTab(index)}
-                            >
-                                {tab}
-                            </li>
-                        ))}
-                    </ul>
-
-                    {/* Tab Content Section */}
-                    <div className="p-6 bg-white rounded-lg shadow-md transition-opacity duration-300">
-                        {activeTab === 0 && <div>🔥 <strong>Errors</strong> Data Goes Here</div>}
+                        <div className="mt-6 border-b border-gray-300">
+                            <ul className="flex space-x-6 border-b">
+                                {["Errors", "Dropdown", "Link", "Disabled"].map((tab, index) => (
+                                    <li
+                                        key={index}
+                                        className={`p-3 px-3 cursor-pointer transition-all duration-300
+                                            ${activeTab === index ? "border-b-2 border-blue-500 text-black font-semibold bg-gray-100" : "text-blue-500 hover:text-blue-700"} 
+                                            ${tab === "Disabled" ? "text-gray-400 cursor-not-allowed" : ""}
+                                        `}
+                                        onClick={() => tab !== "Disabled" && setActiveTab(index)}
+                                    >
+                                        {tab}
+                                    </li>
+                                ))}
+                            </ul>
+                            <div className="p-6 bg-white rounded-lg shadow-md transition-opacity duration-300">
+                                {activeTab === 0 && (
+                                    <div>
+                                        <h2 className="text-lg font-bold">🔥 Errors</h2>
+                                        {loadingScan ? (
+                                            <p>Loading scan results...</p>
+                                        ) : errorScan ? (
+                                            <p className="text-red-500">Error: {errorScan}</p>
+                                        ) : scanResults.length > 0 ? (
+                                            <ul className="list-disc pl-6">
+                                                {scanResults.map((msg, idx) => (
+                                                    <li key={idx} className="text-red-600">
+                                                        {msg}
+                                                    </li>
+                                                ))}
+                                            </ul>
+                                        ) : (
+                                            <p>No errors found.</p>
+                                        )}
+                                    </div>
+                                )}
                         {activeTab === 1 && <div>📂 <strong>Dropdown</strong> Data Content</div>}
                         {activeTab === 2 && <div>🔗 <strong>Link</strong> Data Content</div>}
                         {activeTab === 3 && <div> <strong>Hello</strong> Content</div>}
                     </div>
                 </div>
             )}
-
 
                 </div>
             </div>
