@@ -30,6 +30,13 @@ export default function InfoDetails() {
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [id, page, pageSize]);
 
+  useEffect(() => {
+    if (activeTab === 1) {
+      fetchScanResults();
+    }
+  }, [activeTab]); // Runs whenever activeTab changes
+  
+
   const fetchDetails = async () => {
     setLoading(true);
     setError(null);
@@ -123,7 +130,7 @@ export default function InfoDetails() {
       if (result.isConfirmed) {
         setActiveTab(0);
         setShowTabs(true);
-        fetchScanResults();
+        // fetchScanResults();
       }
     });
   };
@@ -135,7 +142,30 @@ export default function InfoDetails() {
         <div className="flex-1 p-9 bg-white dark:bg-slate-800 rounded-lg shadow-md">
           <h1 className="text-xl font-bold mb-4">File Details (ID: {id})</h1>
 
-          {/* File details top controls */}
+        {/* ------------------ Tab Section ------------------ */}
+        <div className="mt-6 border-b border-gray-300">
+              <ul className="flex space-x-6 border-b">
+                {["Import Data", "Scan Results"].map((tab, index) => (
+                  <li
+                    key={index}
+                    className={`p-3 px-3 cursor-pointer transition-all duration-300
+                      ${
+                        activeTab === index
+                          ? "border-b-2 border-blue-500 text-black font-semibold bg-gray-100"
+                          : "text-blue-500 hover:text-blue-700"
+                      } 
+                      ${tab === "Disabled" ? "text-gray-400 cursor-not-allowed" : ""}
+                    `}
+                    onClick={() => setActiveTab(index)}
+                  >
+                    {tab}
+                  </li>
+                ))}
+              </ul>
+              <div className="p-6 bg-white rounded-lg shadow-md transition-opacity duration-300">
+                
+        {activeTab === 0 && (
+            <div>
           <div className="mb-4 flex items-center justify-between">
             <div className="flex items-center space-x-2">
               <span>Page Size:</span>
@@ -157,10 +187,7 @@ export default function InfoDetails() {
               />
             </div>
 
-            <button
-              onClick={handleClean}
-              className="px-4 py-2 bg-red-500 hover:bg-red-600 text-white rounded"
-            >
+            <button disabled className="px-4 py-2 bg-red-500 hover:bg-red-600 text-white rounded">
               Clean
             </button>
           </div>
@@ -183,10 +210,7 @@ export default function InfoDetails() {
                     <thead>
                       <tr>
                         {headers.map((header) => (
-                          <th
-                            key={header}
-                            className="border px-4 py-2 bg-gray-400 dark:bg-gray-700"
-                          >
+                          <th key={header} className="border px-4 py-2 bg-gray-400 dark:bg-gray-700">
                             {header}
                           </th>
                         ))}
@@ -279,55 +303,32 @@ export default function InfoDetails() {
               <p>No details available.</p>
             )}
           </div>
+          </div>
+        )}
+          
 
-          {/* ------------------ Errors Tab ------------------ */}
-          {showTabs && (
-            <div className="mt-6 border-b border-gray-300">
-              <ul className="flex space-x-6 border-b">
-                {["Errors", "Dropdown", "Link", "Disabled"].map((tab, index) => (
-                  <li
-                    key={index}
-                    className={`p-3 px-3 cursor-pointer transition-all duration-300
-                      ${
-                        activeTab === index
-                          ? "border-b-2 border-blue-500 text-black font-semibold bg-gray-100"
-                          : "text-blue-500 hover:text-blue-700"
-                      } 
-                      ${tab === "Disabled" ? "text-gray-400 cursor-not-allowed" : ""}
-                    `}
-                    onClick={() => tab !== "Disabled" && setActiveTab(index)}
-                  >
-                    {tab}
-                  </li>
-                ))}
-              </ul>
-              <div className="p-6 bg-white rounded-lg shadow-md transition-opacity duration-300">
-                {activeTab === 0 && (
-                  <div>
-                    <h2 className="text-lg font-bold">🔥 Errors</h2>
-                    {loadingScan ? (
-                      <p>Loading scan results...</p>
-                    ) : errorScan ? (
-                      <p className="text-red-500">Error: {errorScan}</p>
-                    ) : scanResults.length > 0 ? (
-                      <ul className="list-disc pl-6">
-                        {scanResults.map((msg, idx) => (
-                          <li key={idx} className="text-red-600">
-                            {msg}
-                          </li>
-                        ))}
-                      </ul>
-                    ) : (
-                      <p>No errors found.</p>
-                    )}
-                  </div>
-                )}
-                {activeTab === 1 && <div>📂 <strong>Dropdown</strong> Data Content</div>}
-                {activeTab === 2 && <div>🔗 <strong>Link</strong> Data Content</div>}
-                {activeTab === 3 && <div><strong>Hello</strong> Content</div>}
-              </div>
+          {activeTab === 1 && (
+                <div>
+                  <h2 className="text-lg font-bold">🔥 Scan Results</h2>
+                  {loadingScan ? (
+                    <p>Loading scan results...</p>
+                  ) : errorScan ? (
+                    <p className="text-red-500">Error: {errorScan}</p>
+                  ) : scanResults.length > 0 ? (
+                    <ul className="list-disc pl-6">
+                      {scanResults.map((msg, idx) => (
+                        <li key={idx} className="text-red-600">
+                          {msg}
+                        </li>
+                      ))}
+                    </ul>
+                  ) : (
+                    <p>No errors found.</p>
+                  )}
+                </div>
+              )}
             </div>
-          )}
+          </div>
         </div>
       </div>
       <Footer />
