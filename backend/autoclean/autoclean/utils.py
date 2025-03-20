@@ -8,6 +8,7 @@ import types
 from api.models import Import, ImportData
 from autoclean.scanners.result import ScanResult, ScanResultAction
 from django.core.exceptions import ObjectDoesNotExist
+from django.db import IntegrityError
 
 def auto_read_csv_file_to_df(file_path) -> pd.DataFrame:
     try:
@@ -52,7 +53,9 @@ def save_import_data_from_df(import_instance: Import, df: pd.DataFrame) -> None:
         raise Exception("The provided DataFrame is empty and cannot be processed.")
     
     for col in df.select_dtypes(include=['datetime64[ns]', 'timedelta64[ns]']):
-        df[col] = df[col].apply(lambda x: x.isoformat() if pd.notna(x) else None)
+        df.loc[:, col] = df[col].apply(lambda x: x.isoformat() if pd.notna(x) else None)
+    
+    df = df.where(pd.notna(df), None)
 
     headers = df.columns.tolist()
     total_rows = len(df)
@@ -74,9 +77,12 @@ def save_import_data_from_df(import_instance: Import, df: pd.DataFrame) -> None:
         })
         for row in df.itertuples(index=False, name=None)
     ]
-
-    if import_data_objects:
-        ImportData.objects.bulk_create(import_data_objects)
+    
+    try:
+        if import_data_objects:
+            ImportData.objects.bulk_create(import_data_objects)
+    except IntegrityError as e:
+        raise Exception(f"Database error during bulk insert: {str(e)}")
 
 def df_from_import_model(import_id: int) -> pd.DataFrame:
     try:
