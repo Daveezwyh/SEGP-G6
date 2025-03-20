@@ -1,7 +1,7 @@
 import React, { useEffect, useState } from "react";
 import { useSelector } from "react-redux";
-import { getToken } from "../../utils";
 import { useNavigate } from "react-router-dom";
+import { getToken } from "../../utils";
 
 import Header from "../Homepage/Header";
 import Footer from "../Homepage/footer";
@@ -88,25 +88,25 @@ export default function Information() {
   };
 
   return (
-    <div className="min-h-screen  dark:bg-gray-700  dark:text-cyan-400">
+    <div className="min-h-screen min-w[800px] dark:bg-slate-700 dark:text-cyan-400">
       <Header />
       <div className="flex">
         <div className="flex-1 p-9">
           <h1 className="text-xl font-bold mb-4">Information Page</h1>
 
           {/* Search */}
-          <div className="mb-4 flex items-center space-x-2">
+          <div className="mb-4 flex items-center space-x-2 dark:bg">
             <input
               type="text"
               placeholder="Search by Name"
               value={searchByName}
               onChange={(e) => setSearchByName(e.target.value)}
-              className="p-2 border rounded w-full md:w-1/3 text-black"
+              className="p-2 border rounded w-full md:w-1/6 text-black"
             />
           </div>
 
           {/* Page Size */}
-          <div className="mb-4 flex items-center space-x-2 dark:bg">
+          <div className="mb-4 flex items-center space-x-2">
             <span>Page Size:</span>
             <input
               type="number"
@@ -118,8 +118,8 @@ export default function Information() {
                   setPage(1);
                   setInputPage("1");
                 }
-              }}
-              className="p-2 border rounded w-20 dark:bg-gray-800"
+            }}
+              className="p-2 border rounded w-20 text-black"
               min="1"
               max={totalCount}
             />
@@ -127,7 +127,7 @@ export default function Information() {
 
           {/* Data */}
           <div className="dark:bg-gray-800 rounded-lg shadow p-4 dark:text-cyan-400">
-              {/* Header */}
+               {/* Header */}
               <div className="grid grid-cols-6 items-center px-4 py-2 text-center">
                   <span className="w-40">File Name</span>
                   <span className="w-10">ID</span>
@@ -135,39 +135,38 @@ export default function Information() {
                   <span className="w-20">Total Rows</span>
                   <span className="w-40">Time Uploaded</span>
                   <span></span>
-              </div>
+            </div>
 
               <hr className="my-2" />
 
               {loading && <p>Loading...</p>}
               {error && <p className="text-red-500">Error: {error}</p>}
-              
               {!loading && !error && data.length > 0 ? (
-                  data
-                      .filter((item) =>
-                          searchByName
-                              ? item.data?.filename?.toLowerCase().includes(searchByName.toLowerCase())
-                              : true
-                      )
-                      .map((item) => (
-                          <div key={item.id} className="grid grid-cols-6 items-center px-4 py-2 text-center rounded-lg shadow dark:bg-gray-800 m-3">
-                              <span className="w-40 truncate">{item.data?.filename || "N/A"}</span>
-                              <span className="w-10">{item.id}</span>
-                              <span className="w-20">{item.uploaded_by || "Unknown"}</span>
-                              <span className="w-20">{item.data?.total_rows || 0}</span>
-                              <span className="w-40">{new Date(item.uploaded_at).toLocaleString()}</span>
-                              <span>
-                                  <button
-                                      onClick={() => navigate(`/info/${item.id}`)}
-                                      className="mt-2 px-4 py-2 bg-blue-500 text-white rounded"
-                                  >
-                                      View
-                                  </button>
-                              </span>
-                          </div>
-                      ))
+                data
+                .filter((item) =>
+                    searchByName
+                        ? item.data?.filename?.toLowerCase().includes(searchByName.toLowerCase())
+                        : true
+                )
+                .map((item) => (
+                    <div key={item.id} className="grid grid-cols-6 items-center px-4 py-2 text-center rounded-lg shadow dark:bg-gray-800 m-3">
+                        <span className="w-40 truncate">{item.data?.filename || "N/A"}</span>
+                        <span className="w-10">{item.id}</span>
+                        <span className="w-20">{item.uploaded_by || "Unknown"}</span>
+                        <span className="w-20">{item.data?.total_rows || 0}</span>
+                        <span className="w-40">{new Date(item.uploaded_at).toLocaleString()}</span>
+                        <span>
+                            <button
+                                onClick={() => navigate(`/info/${item.id}`)}
+                                className="mt-2 px-4 py-2 bg-blue-500 text-white rounded"
+                            >
+                                View
+                            </button>
+                        </span>
+                    </div>
+                ))
               ) : (
-                  <p>No data available.</p>
+                <p>No data available.</p>
               )}
           </div>
 
