@@ -101,7 +101,7 @@ export default function Information() {
               placeholder="Search by Name"
               value={searchByName}
               onChange={(e) => setSearchByName(e.target.value)}
-              className="p-2 border rounded w-20 dark:bg-gray-800"
+              className="p-2 border rounded w-full md:w-1/6 text-black"
             />
           </div>
 
