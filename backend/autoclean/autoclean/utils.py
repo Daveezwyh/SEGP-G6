@@ -6,6 +6,7 @@ import ast
 import types
 from api.models import Import, ImportData
 from autoclean.scanners.result import ScanResult, ScanResultAction
+from django.core.exceptions import ObjectDoesNotExist
 
 def auto_read_csv_file_to_df(file_path) -> pd.DataFrame:
     with open(file_path, 'r') as f:
@@ -66,21 +67,32 @@ def df_from_import_model(import_id: int) -> pd.DataFrame:
         import_datas = ImportData.objects.filter(import_model=import_instance)
 
         headers = import_instance.data.get('headers', [])
-        df_data = []
+        if not headers:
+            raise ValueError("No headers found in the import instance.")
+        
+        df_data = [
+            [import_data.data.get(header, None) if isinstance(import_data.data, dict) else None for header in headers]
+            for import_data in import_datas
+        ]
 
-        for import_data in import_datas:
-            row_data = import_data.data
+        df = pd.DataFrame(df_data, columns=headers)
 
-            if isinstance(row_data, dict):
-                row = [row_data.get(header, None) for header in headers]
-                df_data.append(row)
-            else:
-                df_data.append(row_data)
+        for col in df.columns:
+            df[col] = pd.to_numeric(df[col], errors='ignore')  
 
-        return pd.DataFrame(df_data, columns=headers)
-    
+        return df
+
+    except ObjectDoesNotExist:
+        print(f"Import with ID {import_id} does not exist.")
+        return pd.DataFrame()
+
+    except ValueError as ve:
+        print(f"ValueError: {ve}")
+        return pd.DataFrame()
+
     except Exception as e:
-        raise Exception(f"Error occurred while generating dataframe: {str(e)}")
+        print(f"Unexpected error: {e}")
+        return pd.DataFrame()
 
 class AutocleanAPIPagination(PageNumberPagination):
     page_size = 10

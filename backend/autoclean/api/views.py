@@ -37,7 +37,7 @@ class UserViewSet(viewsets.ModelViewSet):
 class TaskProgressRetrieveAPIView(generics.RetrieveAPIView):
     queryset = TaskProgress.objects.all()
     serializer_class = TaskProgressSerializer
-    # permission_classes = [IsAuthenticated]
+    permission_classes = [IsAuthenticated]
     lookup_field = 'uuid'
 
     def get_object(self):
