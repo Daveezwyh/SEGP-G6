@@ -4,7 +4,6 @@ import { useNavigate } from "react-router-dom";
 import { getToken } from "../../utils";
 
 import Header from "../Homepage/Header";
-import Footer from "../Homepage/footer";
 
 export default function Information() {
   const token = useSelector((state) => state.user.token) || getToken();
@@ -88,7 +87,7 @@ export default function Information() {
   };
 
   return (
-    <div className="min-h-screen min-w[800px] dark:bg-slate-700 dark:text-cyan-400">
+    <div className="min-h-screen min-w-max dark:bg-slate-700 dark:text-cyan-400">
       <Header />
       <div className="flex">
         <div className="flex-1 p-9">
@@ -149,7 +148,7 @@ export default function Information() {
                         : true
                 )
                 .map((item) => (
-                    <div key={item.id} className="grid grid-cols-6 items-center px-4 py-2 text-center rounded-lg shadow dark:bg-gray-800 m-3">
+                    <div key={item.id} className="grid grid-cols-6 items-center px-4 py-2 text-center rounded-lg shadow dark:bg-slate-800 m-3">
                         <span className="w-40 truncate">{item.data?.filename || "N/A"}</span>
                         <span className="w-10">{item.id}</span>
                         <span className="w-20">{item.uploaded_by || "Unknown"}</span>
@@ -206,7 +205,7 @@ export default function Information() {
                 type="number"
                 value={inputPage}
                 onChange={(e) => setInputPage(e.target.value)}
-                className="p-2 border rounded w-24 dark:bg-gray-800"
+                className="p-2 border rounded w-24 text-black"
                 min="1"
                 max={totalPages}
                 placeholder="Page Number"
@@ -224,7 +223,6 @@ export default function Information() {
           </div>
         </div>
       </div>
-      <Footer />
     </div>
   );
 }

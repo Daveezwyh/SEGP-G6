@@ -78,10 +78,6 @@ export default function Body() {
             progressElements.forEach((el) => (el.style.display = "none"));
           }, 0);
         });
-    
-        setDropzoneInstance(dz);
-        return () => dz.destroy();
-    }, []);    
 
         this.on("removedfile", (file) => {
           setSelectedFiles((prevFiles) => prevFiles.filter((f) => f !== file));
