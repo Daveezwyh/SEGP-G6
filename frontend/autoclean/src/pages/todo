@@ -1,21 +1,20 @@
 interface
-- change progressbar folder to 'bar' folder
-- move sidebar into 'bar' folder
 
-- add label for settings icon
+- add scan result with endpoints
+- make sure the pop up tab page no error (pop up after pressing clean button)
+- design multiple selection for cleaning
+- make the information page design nicer
+- report
 
-- progress bar
-- make it pop up page  only?
-- connect with api endpoints
+change the data structure of the import data
 
-information.jsx
-- items/data need to be change to table form
-- add back button
-- navigate the upload file button back to homepage
-
-token
-- fetch token automatically
-
-figma
-report
-
+need to be changed
+-------
+- when uploading file, in detect inspect whether the status is in error or processing
+- if it is error then stop the file from uploading ( the inspect stop running ) and print the error message out
+--------
+- add active and nonactive status
+--------
+- enhance the info page and scanresult(infodetail)
+--------
+- make those details into lists
