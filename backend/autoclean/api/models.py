@@ -52,6 +52,7 @@ class ImportScanResult(models.Model):
     col = models.IntegerField()
     message = models.CharField(max_length=255)
     action_type = models.IntegerField(default=0)
+    priority = models.IntegerField(default=1000, db_index=True)
     import_model = models.ForeignKey(Import, related_name="scan_results", on_delete=models.CASCADE)
 
     def transform(self):
