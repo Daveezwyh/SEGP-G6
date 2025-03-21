@@ -328,7 +328,7 @@ export default function InfoDetails() {
                             Error: {scan.message}
                             </summary>
                             {scan.actions.length > 0 ? (
-                            <div className="mt-2 text-gray-700 dark:text-gray-300">
+                            <daciv className="mt-2 text-gray-700 dark:text-gray-300">
                                 {scan.actions.map((action, actionIdx) => (
                                 <ul key={actionIdx} className="border p-2 rounded-lg bg-gray-100 dark:bg-gray-900">
                                     <p><strong>ID:</strong> {action.id}</p>
@@ -340,7 +340,7 @@ export default function InfoDetails() {
                                     <p>data: {action.string}</p> */}
                                 </ul>
                                 ))}
-                            </div>
+                            </daciv>
                             ) : (
                             <p className="mt-2 text-gray-700 dark:text-gray-300">No actions available.</p>
                             )}

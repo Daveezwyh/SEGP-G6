@@ -166,6 +166,19 @@ export default function Body() {
 
       console.log("📊 Progress Response for file", fileId, response.data);
 
+      // Handle status from the response
+      if (response.data.status === "error") {
+        alert(`❌ File upload failed: ${response.data.error}`);
+        console.error("❌ Upload error:", response.data.error);
+        return; // Stop further processing
+    }
+
+    if (response.data.status === "pending") {
+        console.log(`⏳ Processing file ${fileId}...`);
+        setTimeout(() => checkProgress(uuid, fileId, index), 2000);
+        return;
+    }
+
       const serverProgress = parseFloat(response.data.percentage);
       if (!isNaN(serverProgress)) {
         setUploadProgresses((prev) => ({ ...prev, [index]: serverProgress }));
