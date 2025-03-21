@@ -7,11 +7,12 @@ class SRActionType(Enum):
     MANY_MANDATORY = 4
 
 class ScanResult:
-    def __init__(self, row=0, col=0, message="", action_type=SRActionType.ONE_OPTIONAL, actions=None):
+    def __init__(self, row=0, col=0, message="", action_type=SRActionType.ONE_OPTIONAL, priority=1000, actions=None):
         self.row = row
         self.col = col
         self.message = message
         self.action_type = action_type
+        self.priority = priority
         self.actions = actions if actions is not None else []
 
     def add_action(self, action):
@@ -21,7 +22,7 @@ class ScanResult:
             raise TypeError("Only ScanResultAction instances can be added to actions.")
     
     def __repr__(self):
-        return f"ScanResult(row={self.row}, col={self.col}, message='{self.message}', action_type={self.action_type}, actions={self.actions})"
+        return f"ScanResult(row={self.row}, col={self.col}, message='{self.message}', action_type={self.action_type}, priority={self.priority}, actions={self.actions})"
 
 class ScanResultAction:
     def __init__(self, title="Title", description="Description", cleaner="", cleaner_id=None, activate=False, data=None):

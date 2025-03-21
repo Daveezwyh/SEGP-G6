@@ -1,33 +1,88 @@
 import pandas as pd
 import csv
+import datetime
 from rest_framework.pagination import PageNumberPagination
 from typing import Callable
 import ast
 import types
 from api.models import Import, ImportData
 from autoclean.scanners.result import ScanResult, ScanResultAction
+from django.core.exceptions import ObjectDoesNotExist
+from django.db import IntegrityError
 
 def auto_read_csv_file_to_df(file_path) -> pd.DataFrame:
-    with open(file_path, 'r') as f:
-        first_line = f.readline()
-    
-    sniffer = csv.Sniffer()
     try:
-        delimiter = sniffer.sniff(first_line).delimiter
-        return pd.read_csv(file_path, delimiter=delimiter)
-    except (csv.Error, pd.errors.ParserError):
-        pass
-    
-    common_delimiters = [',', '\t', ';', '|']
-    
-    for delimiter in common_delimiters:
+        with open(file_path, 'r', encoding='utf-8') as f:
+            first_line = f.readline()
+        
+        sniffer = csv.Sniffer()
         try:
-            df = pd.read_csv(file_path, delimiter=delimiter)
-            return df
-        except pd.errors.ParserError:
-            continue
+            delimiter = sniffer.sniff(first_line).delimiter
+        except csv.Error:
+            delimiter = None
+
+        common_delimiters = [',', '\t', ';', '|']
+        delimiters_to_try = [delimiter] + common_delimiters if delimiter else common_delimiters
+
+        for delim in delimiters_to_try:
+            try:
+                df = pd.read_csv(file_path, delimiter=delim, encoding='utf-8', parse_dates=True)
+
+                for col in df.select_dtypes(include=['datetime64[ns]', 'timedelta64[ns]']):
+                    df[col] = df[col].apply(lambda x: x.to_pydatetime() if not pd.isna(x) else None)
+
+                return df
+            except (pd.errors.ParserError, pd.errors.EmptyDataError):
+                continue
+
+        raise ValueError("Could not determine the delimiter for the CSV file.")
+
+    except FileNotFoundError:
+        raise ValueError(f"File not found: {file_path}")
+    except pd.errors.EmptyDataError:
+        raise ValueError("The file is empty.")
+
+def save_import_data_from_df(import_instance: Import, df: pd.DataFrame) -> None:
+    if not isinstance(import_instance, Import):
+        raise TypeError(f"Expected 'import_instance' to be an instance of Import, got {type(import_instance)}")
+
+    if not isinstance(df, pd.DataFrame):
+        raise TypeError(f"Expected 'df' to be a pandas DataFrame, got {type(df)}")
+
+    if df.empty:
+        raise Exception("The provided DataFrame is empty and cannot be processed.")
     
-    raise ValueError("Could not determine the delimiter for the CSV file.")
+    for col in df.select_dtypes(include=['datetime64[ns]', 'timedelta64[ns]']):
+        df.loc[:, col] = df[col].apply(lambda x: x.isoformat() if pd.notna(x) else None)
+    
+    df = df.where(pd.notna(df), None)
+
+    headers = df.columns.tolist()
+    total_rows = len(df)
+
+    current_data = import_instance.data or {}
+    current_data.update({'headers': headers, 'total_rows': total_rows})
+    import_instance.data = current_data
+    import_instance.save()
+
+    ImportData.objects.filter(import_model=import_instance).delete()
+
+    import_data_objects = [
+        ImportData(import_model=import_instance, data={
+            header: (
+                value.isoformat() if isinstance(value, (pd.Timestamp, datetime.datetime)) else 
+                (None if pd.isna(value) else value)
+            )
+            for header, value in zip(headers, row)
+        })
+        for row in df.itertuples(index=False, name=None)
+    ]
+    
+    try:
+        if import_data_objects:
+            ImportData.objects.bulk_create(import_data_objects)
+    except IntegrityError as e:
+        raise Exception(f"Database error during bulk insert: {str(e)}")
 
 def save_import_data_from_df(import_instance: Import, df: pd.DataFrame) -> None:
     if not isinstance(import_instance, Import):
@@ -66,21 +121,35 @@ def df_from_import_model(import_id: int) -> pd.DataFrame:
         import_datas = ImportData.objects.filter(import_model=import_instance)
 
         headers = import_instance.data.get('headers', [])
-        df_data = []
+        if not headers:
+            raise ValueError("No headers found in the import instance.")
+        
+        df_data = [
+            [import_data.data.get(header, None) if isinstance(import_data.data, dict) else None for header in headers]
+            for import_data in import_datas
+        ]
 
-        for import_data in import_datas:
-            row_data = import_data.data
+        df = pd.DataFrame(df_data, columns=headers)
 
-            if isinstance(row_data, dict):
-                row = [row_data.get(header, None) for header in headers]
-                df_data.append(row)
-            else:
-                df_data.append(row_data)
+        for col in df.columns:
+            try:
+                df[col] = pd.to_numeric(df[col])
+            except (ValueError, TypeError):
+                pass
 
-        return pd.DataFrame(df_data, columns=headers)
-    
+        return df
+
+    except ObjectDoesNotExist:
+        print(f"Import with ID {import_id} does not exist.")
+        return pd.DataFrame()
+
+    except ValueError as ve:
+        print(f"ValueError: {ve}")
+        return pd.DataFrame()
+
     except Exception as e:
-        raise Exception(f"Error occurred while generating dataframe: {str(e)}")
+        print(f"Unexpected error: {e}")
+        return pd.DataFrame()
 
 class AutocleanAPIPagination(PageNumberPagination):
     page_size = 10
