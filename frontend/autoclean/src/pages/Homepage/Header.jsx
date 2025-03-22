@@ -4,39 +4,24 @@ import Sidebar from "./bars/Sidebar";
 import { GoSidebarExpand } from "react-icons/go";
 
 export default function Header() {
-    const [darkMode, setDarkMode] = useState(false);
+    const [darkMode, setDarkMode] = useState(() => {
+        const savedTheme = localStorage.getItem("darkMode");
+        return savedTheme !== null ? savedTheme === "true" : window.matchMedia("(prefers-color-scheme: dark)").matches;
+    });
     const [showSetting, setSetting] = useState(false);
     const [isSidebarOpen, setIsSidebarOpen] = useState(false);
 
+    // Apply dark mode class when darkMode state changes
     useEffect(() => {
-        const handleSystemThemeChange = (e) => {
-            const prefersDarkMode = e.matches;
-            setDarkMode(prefersDarkMode);
-            document.body.classList.toggle("dark", prefersDarkMode);
-        };
-
-        const prefersDarkMode = window.matchMedia("(prefers-color-scheme: dark)").matches;
-        setDarkMode(prefersDarkMode);
-        document.body.classList.toggle("dark", prefersDarkMode);
-
-        const darkModeMediaQuery = window.matchMedia("(prefers-color-scheme: dark)");
-        darkModeMediaQuery.addEventListener("change", handleSystemThemeChange);
-
-        return () => {
-            darkModeMediaQuery.removeEventListener("change", handleSystemThemeChange);
-        };
-    }, []);
+        document.body.classList.toggle("dark", darkMode);
+        localStorage.setItem("darkMode", darkMode);
+    }, [darkMode]);
 
     const toggleDarkMode = () => {
-        setDarkMode((prevState) => {
-            const newMode = !prevState;
-            document.body.classList.toggle("dark", newMode);
-            return newMode;
-        });
+        setDarkMode((prevDarkMode) => !prevDarkMode);
     };
 
     const toggleSettings = () => setSetting((prevState) => !prevState);
-
     const toggleSidebar = () => setIsSidebarOpen((prevState) => !prevState);
 
     return (
@@ -44,11 +29,10 @@ export default function Header() {
             <header className={`bg-main shadow-lg relative ${darkMode ? "text-cyan-400" : "text-white"}`}>
                 <Sidebar isOpen={isSidebarOpen} toggleSidebar={toggleSidebar} />
                 <div className="container flex items-center px-6 h-20">
-                <div className="absolute left-4 p-2 cursor-pointer" onClick={toggleSidebar}>
+                    <div className="absolute left-4 p-2 cursor-pointer" onClick={toggleSidebar}>
                         <GoSidebarExpand size="40" />
                     </div>
                     <div className="text-2xl font-bold flex-1 text-center">AutoClean</div>
-
                     <div className="absolute right-4 p-2 cursor-pointer" onClick={toggleSettings}>
                         <CiSettings size="40" />
                     </div>

@@ -1,11 +1,10 @@
 import React, { useEffect, useState } from "react";
 import { useSelector } from "react-redux";
 import { useNavigate, useParams } from "react-router-dom";
-import { getToken } from "../../utils";
 import Swal from "sweetalert2";
+import { getToken } from "../../utils";
 
 import Header from "../Homepage/Header";
-import Footer from "../Homepage/footer";
 
 export default function InfoDetails() {
   const { id } = useParams();
@@ -30,6 +29,28 @@ export default function InfoDetails() {
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [id, page, pageSize]);
 
+  useEffect(() => {
+    if (activeTab === 1) {
+      fetchScanResults();
+    }
+  }, [activeTab]); // Runs whenever activeTab changes
+  
+
+  const totalPages = details ? Math.ceil(details.count / pageSize) : 1;
+
+  const getPageNumbers = () => {
+    if (totalPages <= 5) {
+      return Array.from({ length: totalPages }, (_, i) => i + 1);
+    }
+    if (page <= 3) {
+      return [1, 2, 3, 4, "...", totalPages];
+    }
+    if (page >= totalPages - 2) {
+      return [1, "...", totalPages - 3, totalPages - 2, totalPages - 1, totalPages];
+    }
+    return [1, "...", page - 1, page, page + 1, "...", totalPages];
+  };
+  
   const fetchDetails = async () => {
     setLoading(true);
     setError(null);
@@ -59,20 +80,7 @@ export default function InfoDetails() {
     }
   };
 
-  const totalPages = details ? Math.ceil(details.count / pageSize) : 1;
-
-  const getPageNumbers = () => {
-    if (totalPages <= 5) {
-      return Array.from({ length: totalPages }, (_, i) => i + 1);
-    }
-    if (page <= 3) {
-      return [1, 2, 3, 4, "...", totalPages];
-    }
-    if (page >= totalPages - 2) {
-      return [1, "...", totalPages - 3, totalPages - 2, totalPages - 1, totalPages];
-    }
-    return [1, "...", page - 1, page, page + 1, "...", totalPages];
-  };
+  
 
   const fetchScanResults = async () => {
     setLoadingScan(true);
@@ -101,8 +109,12 @@ export default function InfoDetails() {
         rawArray = data.results;
       }
 
-      const messages = rawArray.map((item) => item.message);
-      setScanResult(messages);
+      const result = rawArray.map((item) => ({
+        message: item.message,
+        actions: item.actions || [] // Extract actions
+      }));
+
+      setScanResult(result);
     } catch (err) {
       setErrorScan(err.message);
     } finally {
@@ -123,19 +135,42 @@ export default function InfoDetails() {
       if (result.isConfirmed) {
         setActiveTab(0);
         setShowTabs(true);
-        fetchScanResults();
+        // fetchScanResults();
       }
     });
   };
 
   return (
-    <div className="min-h-screen min-w-[1000px] dark:bg-slate-700 dark:text-cyan-400">
+    <div className="min-h-screen min-w-max dark:bg-slate-700 dark:text-cyan-400">
       <Header />
       <div className="flex">
-        <div className="flex-1 p-9 bg-white dark:bg-slate-800 rounded-lg shadow-md">
+        <div className="flex-1 p-9 rounded-lg shadow-md">
           <h1 className="text-xl font-bold mb-4">File Details (ID: {id})</h1>
 
-          {/* File details top controls */}
+        {/* ------------------ Tab Section ------------------ */}
+        <div className="mt-6 border-b border-gray-300 dark:border-gray-700 ">
+              <ul className="flex space-x-0 border-b dark:border-gray-600 ">
+                {["Import Data", "Scan Results"].map((tab, index) => (
+                  <li
+                    key={index}
+                    className={`p-3 px-3 cursor-pointer transition-all duration-300
+                      ${
+                        activeTab === index
+                          ? "border-b-2 border-blue-500 font-semibold bg-gray-100 dark:bg-slate-700"
+                          : "text-blue-500 hover:text-blue-700  "
+                      } 
+                      ${tab === "Disabled" ? "text-gray-400 cursor-not-allowed" : ""}
+                    `}
+                    onClick={() => setActiveTab(index)}
+                  >
+                    {tab}
+                  </li>
+                ))}
+              </ul>
+              <div className="p-6 rounded-lg shadow-md transition-opacity duration-300">
+                
+        {activeTab === 0 && (
+            <div>
           <div className="mb-4 flex items-center justify-between">
             <div className="flex items-center space-x-2">
               <span>Page Size:</span>
@@ -157,16 +192,13 @@ export default function InfoDetails() {
               />
             </div>
 
-            <button
-              onClick={handleClean}
-              className="px-4 py-2 bg-red-500 hover:bg-red-600 text-white rounded"
-            >
+            <button disabled className="px-4 py-2 bg-red-500 hover:bg-red-600 text-white rounded">
               Clean
             </button>
           </div>
 
           {/* File details content */}
-          <div className="bg-white dark:bg-gray-800 rounded-lg shadow p-4 text-black dark:text-gray-200">
+          <div className=" bg-gray-200 dark:bg-gray-800 rounded-lg shadow p-4">
             {loading ? (
               <p>Loading...</p>
             ) : error ? (
@@ -180,30 +212,28 @@ export default function InfoDetails() {
                 <h3 className="mt-4 font-bold">Records:</h3>
                 {details.results?.length > 0 ? (
                   <table className="min-w-full border-collapse">
-                    <thead>
-                      <tr>
+                  <thead>
+                    <tr>
+                      {headers.map((header) => (
+                        <th key={header} className=" px-4 py-2 bg-gray-400 dark:bg-gray-700 break-words text-left">
+                          {header}
+                        </th>
+                      ))}
+                    </tr>
+                  </thead>
+                  <tbody>
+                    {details.results.map((record) => (
+                      <tr key={record.id} className="hover:bg-gray-300 dark:hover:bg-gray-600">
                         {headers.map((header) => (
-                          <th
-                            key={header}
-                            className="border px-4 py-2 bg-gray-400 dark:bg-gray-700"
-                          >
-                            {header}
-                          </th>
+                          <td key={header} className=" px-4 py-2 break-words text-left max-w-[400px]">
+                            {record.data[header] ?? "-"}
+                          </td>
                         ))}
                       </tr>
-                    </thead>
-                    <tbody>
-                      {details.results.map((record) => (
-                        <tr key={record.id} className="hover:bg-gray-100 dark:hover:bg-gray-600">
-                          {headers.map((header) => (
-                            <td key={header} className="border px-4 py-2">
-                              {record.data[header] ?? "-"}
-                            </td>
-                          ))}
-                        </tr>
-                      ))}
-                    </tbody>
-                  </table>
+                    ))}
+                  </tbody>
+                </table>
+                
                 ) : (
                   <p>No records available.</p>
                 )}
@@ -251,7 +281,7 @@ export default function InfoDetails() {
                   </div>
 
                   <div className="flex items-center space-x-2 ml-auto">
-                    <span>Jump to Page:</span>
+                    <span className="dark:text-cyan-400">Jump to Page:</span>
                     <input
                       type="number"
                       value={inputPage}
@@ -279,58 +309,55 @@ export default function InfoDetails() {
               <p>No details available.</p>
             )}
           </div>
+          </div>
+        )}
+          
 
-          {/* ------------------ Errors Tab ------------------ */}
-          {showTabs && (
-            <div className="mt-6 border-b border-gray-300">
-              <ul className="flex space-x-6 border-b">
-                {["Errors", "Dropdown", "Link", "Disabled"].map((tab, index) => (
-                  <li
-                    key={index}
-                    className={`p-3 px-3 cursor-pointer transition-all duration-300
-                      ${
-                        activeTab === index
-                          ? "border-b-2 border-blue-500 text-black font-semibold bg-gray-100"
-                          : "text-blue-500 hover:text-blue-700"
-                      } 
-                      ${tab === "Disabled" ? "text-gray-400 cursor-not-allowed" : ""}
-                    `}
-                    onClick={() => tab !== "Disabled" && setActiveTab(index)}
-                  >
-                    {tab}
-                  </li>
-                ))}
-              </ul>
-              <div className="p-6 bg-white rounded-lg shadow-md transition-opacity duration-300">
-                {activeTab === 0 && (
-                  <div>
-                    <h2 className="text-lg font-bold">🔥 Errors</h2>
-                    {loadingScan ? (
-                      <p>Loading scan results...</p>
-                    ) : errorScan ? (
-                      <p className="text-red-500">Error: {errorScan}</p>
-                    ) : scanResults.length > 0 ? (
-                      <ul className="list-disc pl-6">
-                        {scanResults.map((msg, idx) => (
-                          <li key={idx} className="text-red-600">
-                            {msg}
-                          </li>
+          {activeTab === 1 && (
+                <div>
+                  <h2 className="text-lg font-bold">🔥 Scan Results</h2>
+                  {loadingScan ? (
+                    <p>Loading scan results...</p>
+                  ) : errorScan ? (
+                    <p className="text-red-500">Error: {errorScan}</p>
+                  ) : scanResults.length > 0 ? (
+                    <div className="space-y-2">
+                        {scanResults.map((scan, idx) => (
+                        <details key={idx} className="border dark:border-gray-800 rounded-lg p-3  dark:bg-gray-800">
+                            <summary className="cursor-pointer font-semibold text-red-600">
+                            Error: {scan.message}
+                            </summary>
+                            {scan.actions.length > 0 ? (
+                            <daciv className=" mt-2 text-gray-700 dark:text-cyan-400">
+                                {scan.actions.map((action, actionIdx) => (
+                                <ul key={actionIdx} className="my-4">
+                                  <div class="list-group" >
+                                    <a class="list-group-item list-group-item-action" className="border p-2 rounded-lg bg-gray-100 dark:bg-slate-800"><strong>ID:</strong> {action.id}</a>
+                                    <a class="list-group-item list-group-item-action" className="border p-2 rounded-lg bg-gray-100 dark:bg-slate-800"><strong>Title:</strong> {action.title}</a>
+                                    <a class="list-group-item list-group-item-action" className="border p-2 rounded-lg bg-gray-100 dark:bg-slate-800"><strong>Description:</strong> {action.description}</a>
+                                    <a class="list-group-item list-group-item-action" className="border p-2 rounded-lg bg-gray-100 dark:bg-slate-800"><strong>Cleaner:</strong> {action.cleaner}</a>
+                                  </div>
+                                    {/* <p>Cleaner ID: {action.cleaner_id}</p>
+                                    <p>activate: {action.true}</p>
+                                    <p>data: {action.string}</p> */}
+                                </ul>
+                                ))}
+                            </daciv>
+                            ) : (
+                            <p className="mt-2 text-gray-700 dark:text-gray-300">No actions available.</p>
+                            )}
+                        </details>
                         ))}
-                      </ul>
-                    ) : (
-                      <p>No errors found.</p>
-                    )}
-                  </div>
-                )}
-                {activeTab === 1 && <div>📂 <strong>Dropdown</strong> Data Content</div>}
-                {activeTab === 2 && <div>🔗 <strong>Link</strong> Data Content</div>}
-                {activeTab === 3 && <div><strong>Hello</strong> Content</div>}
-              </div>
+                    </div>
+                  ) : (
+                    <p>No errors found.</p>
+                  )}
+                </div>
+              )}
             </div>
-          )}
+          </div>
         </div>
       </div>
-      <Footer />
     </div>
   );
 }
