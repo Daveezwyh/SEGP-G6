@@ -5,6 +5,7 @@ from ScanResult import *
 
 def scan_df_for_duplicates(df: pd.DataFrame) -> List[ScanResult]:
     scan_results = []
+    df = df.dropna(axis=1, how='all')
     duplicated_rows = df[df.duplicated(keep="first")]
     
     for index in duplicated_rows.index:
@@ -23,7 +24,7 @@ def scan_df_for_duplicates(df: pd.DataFrame) -> List[ScanResult]:
                 row=index,
                 col=-1,  # No specific column as the entire row is duplicated
                 message=f"Row {index + 1} is duplicated",
-                action_type=SRActionType.DEFAULT,
+                action_type=SRActionType.ONE_MANDATORY,
                 actions=actions
             )
         )
@@ -52,35 +53,35 @@ def scan_df_for_missing(df: pd.DataFrame) -> List[ScanResult]:
                     description="Fill with median value",
                     cleaner="fill_with_median",
                     cleaner_id=None,
-                    activate=True
+                    activate=False
                 ),
                 ScanResultAction(
                     title="Missing Value Filler",
                     description="Fill with most frequent value",
                     cleaner="fill_with_mode",
                     cleaner_id=None,
-                    activate=True
+                    activate=False
                 ),
                 ScanResultAction(
                     title="Missing Value Filler",
                     description="Fill with previous value",
                     cleaner="fill_with_ffill",
                     cleaner_id=None,
-                    activate=True
+                    activate=False
                 ),
                 ScanResultAction(
                     title="Missing Value Filler",
                     description="Fill with next value",
                     cleaner="fill_with_bfill",
                     cleaner_id=None,
-                    activate=True
+                    activate=False
                 ),
                 ScanResultAction(
                     title="Missing Value Filler",
                     description="Delete the row",
                     cleaner="delete_missing_rows",
                     cleaner_id=None,
-                    activate=True
+                    activate=False
                 )
             ]
         else:
@@ -98,30 +99,30 @@ def scan_df_for_missing(df: pd.DataFrame) -> List[ScanResult]:
                     description="Fill with previous value",
                     cleaner="fill_with_ffill",
                     cleaner_id=None,
-                    activate=True
+                    activate=False
                 ),
                 ScanResultAction(
                     title="Missing Value Filler",
                     description="Fill with next value",
                     cleaner="fill_with_bfill",
                     cleaner_id=None,
-                    activate=True
+                    activate=False
                 ),
                 ScanResultAction(
                     title="Missing Value Filler",
                     description="Delete the row",
                     cleaner="delete_missing_rows",
                     cleaner_id=None,
-                    activate=True
+                    activate=False
                 )
             ]
         
         scan_results.append(
             ScanResult(
                 row=row_idx,
-                col=col_name,
+                col=col_idx,
                 message=f"Missing value in row {row_idx+1}, column '{col_name}'",
-                action_type=SRActionType.DEFAULT,
+                action_type=SRActionType.ONE_MANDATORY,
                 actions=actions
             )
         )
@@ -145,11 +146,12 @@ def scan_df_for_outliers(df: pd.DataFrame) -> List[ScanResult]:
         outliers = (col_data < lower_bound) | (col_data > upper_bound)
         
         for idx in col_data[outliers].index:
+            col_idx = df.columns.get_loc(col)
             actions = [
                 ScanResultAction(
                     title="Outlier Handler",
                     description="Delete the outlier",
-                    cleaner="delete_outlier",
+                    cleaner="clean_df_for_outlier",
                     cleaner_id=None,
                     activate=True
                 )
@@ -158,18 +160,19 @@ def scan_df_for_outliers(df: pd.DataFrame) -> List[ScanResult]:
             scan_results.append(
                 ScanResult(
                     row=idx,
-                    col=col,
+                    col=col_idx,
                     message=f"Outlier detected in column '{col}' at row {idx+1}",
-                    action_type=SRActionType.DEFAULT,
+                    action_type=SRActionType.ONE_MANDATORY,
                     actions=actions
                 )
             )
     
     return scan_results
 
-def scan_df_for_categorical(df: pd.DataFrame, categorical_dtypes: list = ['object', 'category', 'bool']) -> List[ScanResult]:
+def scan_df_for_categorical(df: pd.DataFrame) -> List[ScanResult]:
     scan_results = []
-    max_categories = int(len(df) * 0.1)
+    # max_categories = int(len(df) * 0.1)
+    categorical_dtypes: list = ['object', 'category', 'bool']
     
     non_numeric_cols = df.select_dtypes(include=categorical_dtypes)
 
@@ -178,8 +181,8 @@ def scan_df_for_categorical(df: pd.DataFrame, categorical_dtypes: list = ['objec
             continue
         
         unique_count = df[col].nunique()
-        if unique_count > max_categories:
-            continue
+        # if unique_count > max_categories:
+        #     continue
         
         categories = df[col].dropna().unique()
         categories_str = ", ".join(map(str, categories[:10]))
@@ -190,23 +193,23 @@ def scan_df_for_categorical(df: pd.DataFrame, categorical_dtypes: list = ['objec
             ScanResultAction(
                 title="Categorical Encoder",
                 description="Apply one-hot encoding",
-                cleaner="one_hot",
+                cleaner="clean_df_cat_one_hot",
                 cleaner_id=None,
                 activate=True
             ),
             ScanResultAction(
                 title="Categorical Encoder",
                 description="Apply label encoding",
-                cleaner="label_encoding",
+                cleaner="clean_df_cat_label_encoding",
                 cleaner_id=None,
-                activate=True
+                activate=False
             ),
             ScanResultAction(
                 title="Categorical Encoder",
                 description="Drop the column",
-                cleaner="drop",
+                cleaner="clean_df_cat_drop",
                 cleaner_id=None,
-                activate=True
+                activate=False
             )
         ]
         
@@ -215,7 +218,7 @@ def scan_df_for_categorical(df: pd.DataFrame, categorical_dtypes: list = ['objec
                 row=-1,
                 col=col,
                 message=f"Categorical feature '{col}' detected with {unique_count} categories: {categories_str}",
-                action_type=SRActionType.DEFAULT,
+                action_type=SRActionType.ONE_MANDATORY,
                 actions=actions
             )
         )
@@ -255,7 +258,7 @@ def scan_df_for_target(df: pd.DataFrame, target) -> List[ScanResult]:
                 row=row_idx,
                 col=col_name,
                 message=f"Target value '{target}' found in row {row_idx+1}, column '{col_name}'",
-                action_type=SRActionType.DEFAULT,
+                action_type=SRActionType.MANY_OPTIONAL,
                 actions=actions
             )
         )

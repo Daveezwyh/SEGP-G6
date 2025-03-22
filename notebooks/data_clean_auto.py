@@ -2,7 +2,6 @@ import pandas as pd
 import numpy as np
 import logging
 from sklearn.ensemble import IsolationForest
-from sklearn.experimental import enable_iterative_imputer
 from sklearn.impute import IterativeImputer
 from sklearn.feature_selection import VarianceThreshold
 import matplotlib.pyplot as plt
@@ -11,17 +10,6 @@ from statsmodels.stats.outliers_influence import variance_inflation_factor
 
 def clean_data(
     df: pd.DataFrame,
-    numeric_threshold: float = 0.1,
-    max_unique_count: int = 100,
-    contamination: float = 0.05,
-    max_onehot_features: int = 15,
-    handle_dates: bool = True,
-    text_cleaning: bool = True,
-    extract_dates: bool = True,
-    remove_sparse: bool = True,
-    remove_collinear: bool = True,
-    generate_report: bool = False,
-    output_path: str = "cleaning_report.html"
 ) -> pd.DataFrame:
     """
     Automated data cleaning and preprocessing pipeline
@@ -58,6 +46,17 @@ def clean_data(
     pd.DataFrame
         Processed and cleaned data
     """
+    numeric_threshold: float = 0.1,
+    max_unique_count: int = 100,
+    contamination: float = 0.05,
+    max_onehot_features: int = 15,
+    handle_dates: bool = True,
+    text_cleaning: bool = True,
+    extract_dates: bool = True,
+    remove_sparse: bool = True,
+    remove_collinear: bool = True,
+    generate_report: bool = False,
+    output_path: str = "cleaning_report.html"
     
     df = df.copy()
     
@@ -78,10 +77,7 @@ def _remove_duplicates(df: pd.DataFrame) -> pd.DataFrame:
     """Remove duplicate rows"""
     return df.drop_duplicates().copy()
 
-import pandas as pd
-import numpy as np
-from sklearn.experimental import enable_iterative_imputer  # noqa
-from sklearn.impute import IterativeImputer
+
 
 def _handle_missing_values(df: pd.DataFrame) -> pd.DataFrame:
     """
