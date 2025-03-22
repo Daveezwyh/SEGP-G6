@@ -208,7 +208,7 @@ export default function InfoDetails() {
                 <p>
                   <strong>Total Records:</strong> {details.count}
                 </p>
-                <h3 className="mt-4 font-bold">Records:</h3>
+                <h3 className="mt-3 mb-3 font-bold">Records:</h3>
                 {details.results?.length > 0 ? (
                   <table className="min-w-full border-collapse">
                     <thead>
@@ -222,7 +222,7 @@ export default function InfoDetails() {
                    </thead>
                    <tbody>
                      {details.results.map((record) => (
-                       <tr key={record.id} className="hover:bg-gray-300 dark:hover:bg-gray-600">
+                       <tr key={record.id} className="border-b border-gray-150 hover:bg-gray-300 dark:hover:bg-gray-600">
                           {headers.map((header) => (
                             <td key={header} className=" px-4 py-2 break-words text-left max-w-[400px]">
                                 {record.data[header] ?? "-"}
@@ -356,7 +356,6 @@ export default function InfoDetails() {
           </div>
         </div>
       </div>
-      <Footer />
     </div>
   );
 }
