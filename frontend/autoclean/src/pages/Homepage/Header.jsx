@@ -4,39 +4,23 @@ import Sidebar from "./bars/Sidebar";
 import { GoSidebarExpand } from "react-icons/go";
 
 export default function Header() {
-    const [darkMode, setDarkMode] = useState(false);
+    const [darkMode, setDarkMode] = useState(() => {
+        const savedTheme = localStorage.getItem("darkMode");
+        return savedTheme !== null ? savedTheme === "true" : window.matchMedia("(prefers-color-scheme: dark)").matches;
+    });
     const [showSetting, setSetting] = useState(false);
     const [isSidebarOpen, setIsSidebarOpen] = useState(false);
 
     useEffect(() => {
-        const handleSystemThemeChange = (e) => {
-            const prefersDarkMode = e.matches;
-            setDarkMode(prefersDarkMode);
-            document.body.classList.toggle("dark", prefersDarkMode);
-        };
-
-        const prefersDarkMode = window.matchMedia("(prefers-color-scheme: dark)").matches;
-        setDarkMode(prefersDarkMode);
-        document.body.classList.toggle("dark", prefersDarkMode);
-
-        const darkModeMediaQuery = window.matchMedia("(prefers-color-scheme: dark)");
-        darkModeMediaQuery.addEventListener("change", handleSystemThemeChange);
-
-        return () => {
-            darkModeMediaQuery.removeEventListener("change", handleSystemThemeChange);
-        };
-    }, []);
+        document.body.classList.toggle("dark", darkMode);
+         localStorage.setItem("darkMode", darkMode);
+     }, [darkMode]);
 
     const toggleDarkMode = () => {
-        setDarkMode((prevState) => {
-            const newMode = !prevState;
-            document.body.classList.toggle("dark", newMode);
-            return newMode;
-        });
+        setDarkMode((prevDarkMode) => !prevDarkMode);
     };
 
     const toggleSettings = () => setSetting((prevState) => !prevState);
-
     const toggleSidebar = () => setIsSidebarOpen((prevState) => !prevState);
 
     return (

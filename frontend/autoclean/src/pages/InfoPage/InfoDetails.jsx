@@ -5,7 +5,6 @@ import Swal from "sweetalert2";
 import { getToken } from "../../utils";
 
 import Header from "../Homepage/Header";
-import Footer from "../Homepage/footer";
 
 export default function InfoDetails() {
   const { id } = useParams();
@@ -38,19 +37,19 @@ export default function InfoDetails() {
   
 
   const totalPages = details ? Math.ceil(details.count / pageSize) : 1;
-
-  const getPageNumbers = () => {
-    if (totalPages <= 5) {
-      return Array.from({ length: totalPages }, (_, i) => i + 1);
-    }
-    if (page <= 3) {
-      return [1, 2, 3, 4, "...", totalPages];
-    }
-    if (page >= totalPages - 2) {
-      return [1, "...", totalPages - 3, totalPages - 2, totalPages - 1, totalPages];
-    }
-    return [1, "...", page - 1, page, page + 1, "...", totalPages];
-  };
+ 
+   const getPageNumbers = () => {
+     if (totalPages <= 5) {
+       return Array.from({ length: totalPages }, (_, i) => i + 1);
+     }
+     if (page <= 3) {
+       return [1, 2, 3, 4, "...", totalPages];
+     }
+     if (page >= totalPages - 2) {
+       return [1, "...", totalPages - 3, totalPages - 2, totalPages - 1, totalPages];
+     }
+     return [1, "...", page - 1, page, page + 1, "...", totalPages];
+   };
   
   const fetchDetails = async () => {
     setLoading(true);
@@ -142,15 +141,15 @@ export default function InfoDetails() {
   };
 
   return (
-    <div className="min-h-screen min-w-[1000px] dark:bg-slate-700 dark:text-cyan-400">
+    <div className="min-h-screen min-w-max dark:bg-slate-700 dark:text-cyan-400">
       <Header />
       <div className="flex">
-        <div className="flex-1 p-9 bg-white dark:bg-slate-800 rounded-lg shadow-md">
+      <div className="flex-1 p-9 rounded-lg shadow-md">
           <h1 className="text-xl font-bold mb-4">File Details (ID: {id})</h1>
 
         {/* ------------------ Tab Section ------------------ */}
-        <div className="mt-6 border-b border-gray-300">
-              <ul className="flex space-x-0 border-b">
+        <div className="mt-6 border-b border-gray-300 dark:border-gray-700 ">
+               <ul className="flex space-x-0 border-b dark:border-gray-600 ">
                 {["Import Data", "Scan Results"].map((tab, index) => (
                   <li
                     key={index}
@@ -194,7 +193,6 @@ export default function InfoDetails() {
             </div>
 
             <button disabled className="px-4 py-2 bg-red-500 hover:bg-red-600 text-white rounded">
-              Clean
             </button>
           </div>
 
@@ -214,20 +212,20 @@ export default function InfoDetails() {
                 {details.results?.length > 0 ? (
                   <table className="min-w-full border-collapse">
                     <thead>
-                      <tr>
-                        {headers.map((header) => (
-                          <th key={header} className="border px-4 py-2 bg-gray-400 dark:bg-gray-700">
-                            {header}
-                          </th>
-                        ))}
-                      </tr>
-                    </thead>
-                    <tbody>
-                      {details.results.map((record) => (
-                        <tr key={record.id} className="hover:bg-gray-100 dark:hover:bg-gray-600">
+                     <tr>
+                       {headers.map((header) => (
+                         <th key={header} className=" px-4 py-2 bg-gray-400 dark:bg-gray-700 break-words text-left">
+                           {header}
+                         </th>
+                       ))}
+                     </tr>
+                   </thead>
+                   <tbody>
+                     {details.results.map((record) => (
+                       <tr key={record.id} className="hover:bg-gray-300 dark:hover:bg-gray-600">
                           {headers.map((header) => (
-                            <td key={header} className="border px-4 py-2">
-                              {record.data[header] ?? "-"}
+                            <td key={header} className=" px-4 py-2 break-words text-left max-w-[400px]">
+                                {record.data[header] ?? "-"}
                             </td>
                           ))}
                         </tr>
@@ -281,7 +279,7 @@ export default function InfoDetails() {
                   </div>
 
                   <div className="flex items-center space-x-2 ml-auto">
-                    <span>Jump to Page:</span>
+                  <span className="dark:text-cyan-400">Jump to Page:</span>
                     <input
                       type="number"
                       value={inputPage}
@@ -328,23 +326,25 @@ export default function InfoDetails() {
                             Error: {scan.message}
                             </summary>
                             {scan.actions.length > 0 ? (
-                            <daciv className="mt-2 text-gray-700 dark:text-gray-300">
-                                {scan.actions.map((action, actionIdx) => (
-                                <ul key={actionIdx} className="border p-2 rounded-lg bg-gray-100 dark:bg-gray-900">
-                                    <p><strong>ID:</strong> {action.id}</p>
-                                    <p><strong>Title:</strong> {action.title}</p>
-                                    <p><strong>Description:</strong> {action.description}</p>
-                                    <p><strong>Cleaner:</strong> {action.cleaner}</p>ion.cl
-                                    {/* <p>Cleaner ID: {action.cleaner_id}</p>
-                                    <p>activate: {action.true}</p>
-                                    <p>data: {action.string}</p> */}
-                                </ul>
-                                ))}
-                            </daciv>
-                            ) : (
-                            <p className="mt-2 text-gray-700 dark:text-gray-300">No actions available.</p>
-                            )}
-                        </details>
+                            <daciv className=" mt-2 text-gray-700 dark:text-cyan-400">
+                            {scan.actions.map((action, actionIdx) => (
+                            <ul key={actionIdx} className="my-4">
+                              <div class="list-group" >
+                                <a class="list-group-item list-group-item-action" className="border p-2 rounded-lg bg-gray-100 dark:bg-slate-800"><strong>ID:</strong> {action.id}</a>
+                                <a class="list-group-item list-group-item-action" className="border p-2 rounded-lg bg-gray-100 dark:bg-slate-800"><strong>Title:</strong> {action.title}</a>
+                                <a class="list-group-item list-group-item-action" className="border p-2 rounded-lg bg-gray-100 dark:bg-slate-800"><strong>Description:</strong> {action.description}</a>
+                                <a class="list-group-item list-group-item-action" className="border p-2 rounded-lg bg-gray-100 dark:bg-slate-800"><strong>Cleaner:</strong> {action.cleaner}</a>
+                              </div>
+                                {/* <p>Cleaner ID: {action.cleaner_id}</p>
+                                <p>activate: {action.true}</p>
+                                <p>data: {action.string}</p> */}
+                            </ul>
+                            ))}
+                        </daciv>
+                        ) : (
+                        <p className="mt-2 text-gray-700 dark:text-gray-300">No actions available.</p>
+                        )}
+                    </details>
                         ))}
                     </div>
                   ) : (
