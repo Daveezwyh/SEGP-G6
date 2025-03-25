@@ -313,7 +313,7 @@ export default function InfoDetails() {
 
           {activeTab === 1 && (
                 <div>
-                  <h2 className="text-lg font-bold">🔥 Scan Results</h2>
+                  <h2 className="text-lg pb-2 font-bold">🔥 Scan Results</h2>
                   {loadingScan ? (
                     <p>Loading scan results...</p>
                   ) : errorScan ? (
@@ -323,7 +323,7 @@ export default function InfoDetails() {
                         {scanResults.map((scan, idx) => (
                         <details key={idx} className="border border-gray-300 rounded-lg p-3 bg-white dark:bg-gray-800">
                             <summary className="cursor-pointer font-semibold text-red-600">
-                            Error: {scan.message}
+                            Problem detected: {scan.message}
                             </summary>
                             {scan.actions.length > 0 ? (
                             <daciv className=" mt-2 text-gray-700 dark:text-cyan-400">
