@@ -11,11 +11,10 @@ export default function Header() {
     const [showSetting, setSetting] = useState(false);
     const [isSidebarOpen, setIsSidebarOpen] = useState(false);
 
-    // Apply dark mode class when darkMode state changes
     useEffect(() => {
         document.body.classList.toggle("dark", darkMode);
-        localStorage.setItem("darkMode", darkMode);
-    }, [darkMode]);
+         localStorage.setItem("darkMode", darkMode);
+     }, [darkMode]);
 
     const toggleDarkMode = () => {
         setDarkMode((prevDarkMode) => !prevDarkMode);
@@ -29,10 +28,11 @@ export default function Header() {
             <header className={`bg-main shadow-lg relative ${darkMode ? "text-cyan-400" : "text-white"}`}>
                 <Sidebar isOpen={isSidebarOpen} toggleSidebar={toggleSidebar} />
                 <div className="container flex items-center px-6 h-20">
-                    <div className="absolute left-4 p-2 cursor-pointer" onClick={toggleSidebar}>
+                <div className="absolute left-4 p-2 cursor-pointer" onClick={toggleSidebar}>
                         <GoSidebarExpand size="40" />
                     </div>
                     <div className="text-2xl font-bold flex-1 text-center">AutoClean</div>
+
                     <div className="absolute right-4 p-2 cursor-pointer" onClick={toggleSettings}>
                         <CiSettings size="40" />
                     </div>

@@ -14,6 +14,7 @@ export default function Body() {
   const [uploadProgresses, setUploadProgresses] = useState({});
   const [completedFileIds, setCompletedFileIds] = useState({});
   const [navigated, setNavigated] = useState(false);
+  const [isUploading, setIsUploading] = useState(false);
 
   useEffect(() => {
     const dz = new Dropzone(dropzoneRef.current, {
@@ -80,6 +81,7 @@ export default function Body() {
         });
 
         this.on("removedfile", (file) => {
+          if (isUploading) return;
           setSelectedFiles((prevFiles) => prevFiles.filter((f) => f !== file));
         });
 
@@ -98,11 +100,25 @@ export default function Body() {
     return () => dz.destroy();
   }, []);
 
+  useEffect(() => {
+    const removeButtons = document.querySelectorAll(".dz-remove");
+    removeButtons.forEach((btn) => {
+      if (isUploading) {
+        btn.style.pointerEvents = "none";
+        btn.style.opacity = "0.5";
+      } else {
+        btn.style.pointerEvents = "auto";
+        btn.style.opacity = "1";
+      }
+    });
+  }, [isUploading]);
+
   const handleConfirmUpload = async () => {
     if (selectedFiles.length === 0) {
       alert("Please add at least one file.");
       return;
     }
+    setIsUploading(true);
     setUploadProgresses({});
     setCompletedFileIds({});
     setNavigated(false);
@@ -140,6 +156,7 @@ export default function Body() {
       } else {
         alert("❌ Upload successful, but the backend did not return a task ID!");
         console.error("❌ Server response:", response.data);
+        setIsUploading(false);
       }
     } catch (error) {
       if (error.response?.status === 401) {
@@ -149,6 +166,7 @@ export default function Body() {
         alert("Failed to upload file. Please try again.");
         console.error("Upload Error:", error);
       }
+      setIsUploading(false);
     }
   };
 
@@ -171,13 +189,13 @@ export default function Body() {
         alert(`❌ File upload failed: ${response.data.error}`);
         console.error("❌ Upload error:", response.data.error);
         return; // Stop further processing
-    }
+      }
 
-    if (response.data.status === "pending") {
+      if (response.data.status === "pending") {
         console.log(`⏳ Processing file ${fileId}...`);
         setTimeout(() => checkProgress(uuid, fileId, index), 2000);
         return;
-    }
+      }
 
       const serverProgress = parseFloat(response.data.percentage);
       if (!isNaN(serverProgress)) {
@@ -204,6 +222,7 @@ export default function Body() {
       Object.keys(completedFileIds).length === selectedFiles.length
     ) {
       setNavigated(true);
+      setIsUploading(false);
 
       const sortedKeys = Object.keys(completedFileIds)
         .map((k) => parseInt(k, 10))
@@ -214,7 +233,9 @@ export default function Body() {
         fileId: completedFileIds[k],
       }));
 
-      const uploadedFilesInStorage = fileIdsArray.map((obj) => String(obj.fileId));
+      const uploadedFilesInStorage = fileIdsArray.map((obj) =>
+        String(obj.fileId)
+      );
       localStorage.setItem("uploadedFiles", JSON.stringify(uploadedFilesInStorage));
 
       if (fileIdsArray.length === 1) {
@@ -244,7 +265,7 @@ export default function Body() {
         });
       }
     }
-  }, [completedFileIds, selectedFiles, navigated, navigate]);  
+  }, [completedFileIds, selectedFiles, navigated, navigate]);
 
   return (
     <div className="flex flex-col items-center fit-h-screen space-y-8 mt-11 dark:text-cyan-400">
@@ -283,9 +304,12 @@ export default function Body() {
       {/* Handling Buttons */}
       <button
         onClick={handleConfirmUpload}
-        className="bg-main hover:bg-mainHover text-white rounded-2xl font-bold py-4 px-[30%] mt-4"
+        disabled={isUploading}
+        className={`bg-main hover:bg-mainHover text-white rounded-2xl font-bold py-4 px-[30%] mt-4 ${
+          isUploading ? "opacity-50 cursor-not-allowed" : ""
+        }`}
       >
-        Upload File
+        {isUploading ? "Uploading..." : "Upload File"}
       </button>
     </div>
   );

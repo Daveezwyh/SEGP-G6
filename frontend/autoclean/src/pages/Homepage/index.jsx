@@ -9,7 +9,7 @@ export default function Homepage() {
         <div className="min-h-screen dark:bg-slate-700">
             <Header />
             <Body />
-           
+
         </div>
     );
 }
