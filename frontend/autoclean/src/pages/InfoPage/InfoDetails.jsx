@@ -481,15 +481,14 @@ export default function InfoDetails() {
                     </div>
                 </div>
         )}
-          
 
-          {activeTab === 1 && (
+        {activeTab === 1 && (
                 <div>
                   <h2 className="text-lg pb-2 font-bold">🔥 Scan Results</h2>
                   {loadingScan ? (
                     <p>Loading scan results...</p>
                   ) : errorScan ? (
-                    <p className="text-red-500">Error: {errorScan}</p>
+                    <p className="text-red-500 dark: text-gray-300">Error: {errorScan}</p>
                   ) : scanResults.length > 0 ? (
                     <div className="space-y-2">
                             {scanResults.map((scan, idx) => (
@@ -497,34 +496,48 @@ export default function InfoDetails() {
                             key={idx}
                             className="border border-gray-300 rounded-lg p-3 bg-white dark:bg-gray-800"
                             >
-                            <summary className="cursor-pointer font-semibold text-red-600">
+                            <summary className="cursor-pointer font-semibold text-red-600 dark: text-red 400">
                                 Problem detected: {scan.message}
                             </summary>
+
                             {scan.actions.length > 0 ? (
                                 <div className="mt-2 text-gray-700 dark:text-cyan-400">
                                 {scan.actions.map((action, actionIdx) => (
-                            <ul key={actionIdx} className="my-4">
-                                <div className="list-group">
-                                        <a className="border p-2 rounded-lg bg-gray-100 dark:bg-slate-800">
-                                        <strong>ID:</strong> {action.id}
-                                        </a>
-                                        <a className="border p-2 rounded-lg bg-gray-100 dark:bg-slate-800">
-                                        <strong>Title:</strong> {action.title}
-                                        </a>
-                                        <a className="border p-2 rounded-lg bg-gray-100 dark:bg-slate-800">
-                                        <strong>Description:</strong> {action.description}
-                                        </a>
-                                        <a className="border p-2 rounded-lg bg-gray-100 dark:bg-slate-800">
-                                        <strong>Cleaner:</strong> {action.cleaner}
-                                        </a>
-                                        <div className="flex justify-between border p-2 rounded-lg bg-gray-100 dark:bg-slate-800">
-                                        <strong>Activate:</strong>
-                                        <span className={action.activate ? "text-green-600 font-semibold ml-3" : "text-red-500 font-semibold ml-3"}>
-                                        {action.activate ? "On" : "Off"}
-                                        </span>
-                                    </div>
+                            <ul key={actionIdx} className="my-4 space-y-3">
+                            <li className="rounded-lg border border-gray-200 dark:border-slate-700 bg-gray-50 dark:bg-slate-700 p-4 shadow-sm">
+                              <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 text-sm">
+                                <div>
+                                  <span className="font-semibold text-gray-600 dark:text-gray-300">ID:</span>{" "}
+                                  <span className="text-gray-800 dark:text-white">{action.id}</span>
+                                </div>
+                                <div>
+                                  <span className="font-semibold text-gray-600 dark:text-gray-300">Title:</span>{" "}
+                                  <span className="text-gray-800 dark:text-white">{action.title}</span>
+                                </div>
+                                <div className="sm:col-span-2">
+                                  <span className="font-semibold text-gray-600 dark:text-gray-300">Description:</span>{" "}
+                                  <span className="text-gray-800 dark:text-white">{action.description}</span>
+                                </div>
+                                <div>
+                                  <span className="font-semibold text-gray-600 dark:text-gray-300">Cleaner:</span>{" "}
+                                  <span className="text-blue-500">{action.cleaner}</span>
+                                </div>
+                                <div className="flex justify-between items-center sm:justify-start sm:gap-3">
+                                  <span className="font-semibold text-gray-600 dark:text-gray-300">Activate:</span>
+                                  <span
+                                    className={`px-2 py-0.5 rounded-full text-sm font-semibold ${
+                                      action.activate
+                                        ? "bg-green-100 text-green-700 dark:bg-green-800 dark:text-green-300"
+                                        : "bg-red-100 text-red-700 dark:bg-red-800 dark:text-red-300"
+                                    }`}
+                                  >
+                                    {action.activate ? "On" : "Off"}
+                                  </span>
+                                </div>
                               </div>
-                            </ul>
+                            </li>
+                          </ul>
+                          
                             ))}
                             </div>
                           ) : (
@@ -571,7 +584,7 @@ export default function InfoDetails() {
                     ? "Completed"
                     : "Processing..."}
                 </p>
- 
+
                {/* Finish Button */}
                 <button
                     onClick={handleFinish}
