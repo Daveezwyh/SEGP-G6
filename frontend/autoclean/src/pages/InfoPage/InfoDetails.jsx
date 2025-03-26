@@ -354,7 +354,7 @@ export default function InfoDetails() {
                         onClick={handleExport}
                          className="px-4 py-2 bg-green-500 hover:bg-green-600 text-white rounded"
                       >
-                        Export File
+                        Export
                       </button>
                     </div>
                   </div>
@@ -418,67 +418,67 @@ export default function InfoDetails() {
                          </div>
  
                          {/* Paging Controls */}
-                         <div className="mt-12 flex items-center justify-between">
-                           <div className="mt-4 flex items-center space-x-2">
-                             <button
-                               onClick={() => setPage((prev) => Math.max(prev - 1, 1))}
-                               disabled={page === 1}
-                               className="px-4 py-2 bg-gray-300 dark:bg-gray-700 rounded disabled:opacity-50"
-                             >
-                               {"<"}
-                             </button>
-                             {getPageNumbers().map((num, index) => (
-                               <button
-                                 key={index}
-                                 onClick={() => typeof num === "number" && setPage(num)}
-                                 className={`px-3 py-1 rounded ${
-                                   num === page
-                                     ? "bg-blue-500 text-white"
-                                     : "bg-gray-300 dark:bg-gray-700"
-                                 }`}
-                                 disabled={num === "..."}
-                               >
-                                 {num}
-                               </button>
-                             ))}
-                             <button
-                               onClick={() => setPage((prev) => Math.min(prev + 1, totalPages))}
-                               disabled={page === totalPages}
-                               className="px-4 py-2 bg-gray-300 dark:bg-gray-700 rounded"
-                             >
-                               {">"}
-                             </button>
-                           </div>
- 
-                           <div className="flex items-center space-x-2 ml-auto">
-                             <span className="dark:text-cyan-400">Jump to Page:</span>
-                             <input
-                               type="number"
-                               value={inputPage}
-                               onChange={(e) => setInputPage(e.target.value)}
-                               className="p-2 border rounded w-24 text-black"
-                               min="1"
-                               max={totalPages}
-                               placeholder="Page Number"
-                             />
-                             <button
-                               onClick={() => {
-                                 const newPage = parseInt(inputPage, 10);
-                                 if (!isNaN(newPage) && newPage > 0 && newPage <= totalPages) {
-                                   setPage(newPage);
-                                 }
-                               }}
-                               className="px-4 py-2 bg-blue-500 text-white rounded"
-                             >
-                               Go
-                             </button>
-                           </div>
-                         </div>
-                       </div>
-                     ) : (
-                       <p>No details available.</p>
-                     )}
-                  </div>
+                            <div className="mt-12 flex items-center justify-between">
+                            <div className="mt-4 flex items-center space-x-2">
+                                <button
+                                onClick={() => setPage((prev) => Math.max(prev - 1, 1))}
+                                disabled={page === 1}
+                                className="px-4 py-2 bg-gray-300 dark:bg-gray-700 rounded disabled:opacity-50"
+                                >
+                                {"<"}
+                                </button>
+                                {getPageNumbers().map((num, index) => (
+                                <button
+                                    key={index}
+                                    onClick={() => typeof num === "number" && setPage(num)}
+                                    className={`px-3 py-1 rounded ${
+                                    num === page
+                                        ? "bg-blue-500 text-white"
+                                        : "bg-gray-300 dark:bg-gray-700"
+                                    }`}
+                                    disabled={num === "..."}
+                                >
+                                    {num}
+                                </button>
+                                ))}
+                                <button
+                                onClick={() => setPage((prev) => Math.min(prev + 1, totalPages))}
+                                disabled={page === totalPages}
+                                className="px-4 py-2 bg-gray-300 dark:bg-gray-700 rounded"
+                                >
+                                {">"}
+                                </button>
+                            </div>
+    
+                            <div className="flex items-center space-x-2 ml-auto">
+                                <span className="dark:text-cyan-400">Jump to Page:</span>
+                                <input
+                                type="number"
+                                value={inputPage}
+                                onChange={(e) => setInputPage(e.target.value)}
+                                className="p-2 border rounded w-24 text-black"
+                                min="1"
+                                max={totalPages}
+                                placeholder="Page Number"
+                                />
+                                <button
+                                onClick={() => {
+                                    const newPage = parseInt(inputPage, 10);
+                                    if (!isNaN(newPage) && newPage > 0 && newPage <= totalPages) {
+                                    setPage(newPage);
+                                    }
+                                }}
+                                className="px-4 py-2 bg-blue-500 text-white rounded"
+                                >
+                                Go
+                                </button>
+                            </div>
+                            </div>
+                        </div>
+                        ) : (
+                        <p>No details available.</p>
+                        )}
+                    </div>
                 </div>
         )}
           
@@ -492,31 +492,37 @@ export default function InfoDetails() {
                     <p className="text-red-500">Error: {errorScan}</p>
                   ) : scanResults.length > 0 ? (
                     <div className="space-y-2">
-                         {scanResults.map((scan, idx) => (
-                         <details
-                           key={idx}
-                           className="border border-gray-300 rounded-lg p-3 bg-white dark:bg-gray-800"
-                         >
-                           <summary className="cursor-pointer font-semibold text-red-600">
-                             Problem detected: {scan.message}
-                           </summary>
-                           {scan.actions.length > 0 ? (
-                             <div className="mt-2 text-gray-700 dark:text-cyan-400">
-                               {scan.actions.map((action, actionIdx) => (
+                            {scanResults.map((scan, idx) => (
+                            <details
+                            key={idx}
+                            className="border border-gray-300 rounded-lg p-3 bg-white dark:bg-gray-800"
+                            >
+                            <summary className="cursor-pointer font-semibold text-red-600">
+                                Problem detected: {scan.message}
+                            </summary>
+                            {scan.actions.length > 0 ? (
+                                <div className="mt-2 text-gray-700 dark:text-cyan-400">
+                                {scan.actions.map((action, actionIdx) => (
                             <ul key={actionIdx} className="my-4">
-                              <div className="list-group">
-                                     <a className="border p-2 rounded-lg bg-gray-100 dark:bg-slate-800">
-                                       <strong>ID:</strong> {action.id}
-                                     </a>
-                                     <a className="border p-2 rounded-lg bg-gray-100 dark:bg-slate-800">
-                                       <strong>Title:</strong> {action.title}
-                                     </a>
-                                     <a className="border p-2 rounded-lg bg-gray-100 dark:bg-slate-800">
-                                       <strong>Description:</strong> {action.description}
-                                     </a>
-                                     <a className="border p-2 rounded-lg bg-gray-100 dark:bg-slate-800">
-                                       <strong>Cleaner:</strong> {action.cleaner}
-                                     </a>
+                                <div className="list-group">
+                                        <a className="border p-2 rounded-lg bg-gray-100 dark:bg-slate-800">
+                                        <strong>ID:</strong> {action.id}
+                                        </a>
+                                        <a className="border p-2 rounded-lg bg-gray-100 dark:bg-slate-800">
+                                        <strong>Title:</strong> {action.title}
+                                        </a>
+                                        <a className="border p-2 rounded-lg bg-gray-100 dark:bg-slate-800">
+                                        <strong>Description:</strong> {action.description}
+                                        </a>
+                                        <a className="border p-2 rounded-lg bg-gray-100 dark:bg-slate-800">
+                                        <strong>Cleaner:</strong> {action.cleaner}
+                                        </a>
+                                        <div className="flex justify-between border p-2 rounded-lg bg-gray-100 dark:bg-slate-800">
+                                        <strong>Activate:</strong>
+                                        <span className={action.activate ? "text-green-600 font-semibold ml-3" : "text-red-500 font-semibold ml-3"}>
+                                        {action.activate ? "On" : "Off"}
+                                        </span>
+                                    </div>
                               </div>
                             </ul>
                             ))}
@@ -539,49 +545,49 @@ export default function InfoDetails() {
         </div>
       </div>
       {/* Progress bar popup (displayed only when showProgressModal=true) */}
-      {showProgressModal && (
-         <div className="fixed inset-0 flex items-center justify-center bg-black bg-opacity-50 backdrop-blur-sm z-50">
-           <div className="bg-yellow-50 border border-black rounded-lg px-8 py-6 shadow-md flex flex-col items-center">
-             <div className="bg-white rounded-lg px-6 py-4 w-[300px] flex flex-col items-center shadow-sm">
-               <div className="text-gray-700 font-medium mb-3 text-lg">
-                 Processing, {progress.toFixed(2)}%
-               </div>
-               <div className="flex space-x-2">
-                 {Array.from({ length: TOTAL_SEGMENTS }, (_, i) => {
-                   const isActive = i < segmentsActive;
-                   return (
-                     <span
-                       key={i}
-                       className={
-                         "h-4 w-4 rounded-full transition-colors duration-300 " +
-                         (isActive ? "bg-green-500" : "bg-gray-300")
-                       }
-                     />
-                   );
-                 })}
-               </div>
-               <p className="text-sm mt-3 text-gray-600">
-                 {progressStatus === "completed" || progress >= 100
-                   ? "Completed"
-                   : "Processing..."}
-               </p>
+        {showProgressModal && (
+            <div className="fixed inset-0 flex items-center justify-center bg-black bg-opacity-50 backdrop-blur-sm z-50">
+            <div className="bg-yellow-50 border border-black rounded-lg px-8 py-6 shadow-md flex flex-col items-center">
+                <div className="bg-white rounded-lg px-6 py-4 w-[300px] flex flex-col items-center shadow-sm">
+                <div className="text-gray-700 font-medium mb-3 text-lg">
+                    Processing, {progress.toFixed(2)}%
+                </div>
+                <div className="flex space-x-2">
+                    {Array.from({ length: TOTAL_SEGMENTS }, (_, i) => {
+                    const isActive = i < segmentsActive;
+                    return (
+                        <span
+                        key={i}
+                        className={
+                            "h-4 w-4 rounded-full transition-colors duration-300 " +
+                            (isActive ? "bg-green-500" : "bg-gray-300")
+                        }
+                        />
+                    );
+                    })}
+                </div>
+                <p className="text-sm mt-3 text-gray-600">
+                    {progressStatus === "completed" || progress >= 100
+                    ? "Completed"
+                    : "Processing..."}
+                </p>
  
                {/* Finish Button */}
-               <button
-                 onClick={handleFinish}
-                 disabled={progress < 100 && progressStatus !== "completed"}
-                 className={`mt-4 px-4 py-2 rounded text-white ${
-                   progress >= 100 || progressStatus === "completed"
-                     ? "bg-blue-500 hover:bg-blue-600"
-                     : "bg-gray-400 cursor-not-allowed"
-                 }`}
-               >
-                 Finish
-               </button>
-             </div>
-           </div>
-         </div>
-       )}
+                <button
+                    onClick={handleFinish}
+                    disabled={progress < 100 && progressStatus !== "completed"}
+                    className={`mt-4 px-4 py-2 rounded text-white ${
+                    progress >= 100 || progressStatus === "completed"
+                        ? "bg-blue-500 hover:bg-blue-600"
+                        : "bg-gray-400 cursor-not-allowed"
+                    }`}
+                >
+                    Finish
+                </button>
+                </div>
+            </div>
+            </div>
+        )}
     </div>
   );
 }
