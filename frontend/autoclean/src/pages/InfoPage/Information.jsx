@@ -21,7 +21,7 @@ export default function Information() {
 
   useEffect(() => {
     if (page > totalPages && totalPages > 0) {
-      setPage(totalPages, page);
+      setPage(totalPages);
     }
   }, [totalPages]);
 
@@ -275,7 +275,7 @@ export default function Information() {
                .map((item) => (
                  <div
                    key={item.id}
-                   className="grid grid-cols-6 items-center px-4 py-3 text-center 
+                   className="grid grid-cols-7 items-center px-4 py-3 text-center 
                               border-b last:border-0 border-gray-300 dark:border-gray-600 
                               hover:bg-gray-50 dark:hover:bg-[#2F3C4B] transition-all transform hover:scale-[1.01]"
                  >
@@ -283,6 +283,7 @@ export default function Information() {
                      {item.data?.filename || "N/A"}
                    </span>
                    <span>{item.id}</span>
+                   <span>{item.status_text || "N/A"}</span>
                    <span>{item.uploaded_by || "Unknown"}</span>
                    <span>{item.data?.total_rows || 0}</span>
                    <span>{new Date(item.uploaded_at).toLocaleString()}</span>
@@ -300,21 +301,22 @@ export default function Information() {
            ) : (
              !loading && <p className="p-4 text-center">No data available.</p>
            )}
+         
          </div>
- 
-         {/* Pagination component */}
-         <div className="mt-6 flex flex-col md:flex-row items-center justify-between gap-6">
-           <div className="flex items-center space-x-2">
-             <button
-               onClick={() => setPage((prev) => Math.max(prev - 1, 1))}
-               disabled={page === 1}
-               className="px-4 py-2 bg-gray-300 dark:bg-gray-600 text-gray-800 dark:text-gray-100 
-                          rounded disabled:opacity-50 hover:bg-gray-400 dark:hover:bg-gray-500 
-                          transition-all transform hover:scale-105"
-             >
-               {"<"}
-             </button>
-             {getPageNumbers().map((num, index) => (
+  
+          {/* Pagination component */}
+          <div className="mt-6 flex flex-col md:flex-row items-center justify-between gap-6">
+            <div className="flex items-center space-x-2">
+              <button
+                onClick={() => setPage((prev) => Math.max(prev - 1, 1))}
+                disabled={page === 1}
+                className="px-4 py-2 bg-gray-300 dark:bg-gray-600 text-gray-800 dark:text-gray-100 
+                           rounded disabled:opacity-50 hover:bg-gray-400 dark:hover:bg-gray-500 
+                           transition-all transform hover:scale-105"
+              >
+                {"<"}
+              </button>
+              {getPageNumbers().map((num, index) => (
               <button
               key={index}
               onClick={() => typeof num === "number" && setPage(num)}
@@ -338,7 +340,7 @@ export default function Information() {
                 {">"}
               </button>
             </div>
-  
+   
             <div className="flex items-center space-x-2">
               <span>Jump to Page:</span>
               <input
