@@ -1,5 +1,6 @@
 import pandas as pd
 import csv
+import datetime
 from rest_framework.pagination import PageNumberPagination
 from typing import Callable
 import ast
@@ -7,28 +8,39 @@ import types
 from api.models import Import, ImportData
 from autoclean.scanners.result import ScanResult, ScanResultAction
 from django.core.exceptions import ObjectDoesNotExist
+from django.db import IntegrityError
 
 def auto_read_csv_file_to_df(file_path) -> pd.DataFrame:
-    with open(file_path, 'r') as f:
-        first_line = f.readline()
-    
-    sniffer = csv.Sniffer()
     try:
-        delimiter = sniffer.sniff(first_line).delimiter
-        return pd.read_csv(file_path, delimiter=delimiter)
-    except (csv.Error, pd.errors.ParserError):
-        pass
-    
-    common_delimiters = [',', '\t', ';', '|']
-    
-    for delimiter in common_delimiters:
+        with open(file_path, 'r', encoding='utf-8') as f:
+            first_line = f.readline()
+        
+        sniffer = csv.Sniffer()
         try:
-            df = pd.read_csv(file_path, delimiter=delimiter)
-            return df
-        except pd.errors.ParserError:
-            continue
-    
-    raise ValueError("Could not determine the delimiter for the CSV file.")
+            delimiter = sniffer.sniff(first_line).delimiter
+        except csv.Error:
+            delimiter = None
+
+        common_delimiters = [',', '\t', ';', '|']
+        delimiters_to_try = [delimiter] + common_delimiters if delimiter else common_delimiters
+
+        for delim in delimiters_to_try:
+            try:
+                df = pd.read_csv(file_path, delimiter=delim, encoding='utf-8', parse_dates=True)
+
+                for col in df.select_dtypes(include=['datetime64[ns]', 'timedelta64[ns]']):
+                    df[col] = df[col].apply(lambda x: x.to_pydatetime() if not pd.isna(x) else None)
+
+                return df
+            except (pd.errors.ParserError, pd.errors.EmptyDataError):
+                continue
+
+        raise ValueError("Could not determine the delimiter for the CSV file.")
+
+    except FileNotFoundError:
+        raise ValueError(f"File not found: {file_path}")
+    except pd.errors.EmptyDataError:
+        raise ValueError("The file is empty.")
 
 def save_import_data_from_df(import_instance: Import, df: pd.DataFrame) -> None:
     if not isinstance(import_instance, Import):
@@ -40,6 +52,11 @@ def save_import_data_from_df(import_instance: Import, df: pd.DataFrame) -> None:
     if df.empty:
         raise Exception("The provided DataFrame is empty and cannot be processed.")
     
+    for col in df.select_dtypes(include=['datetime64[ns]', 'timedelta64[ns]']):
+        df.loc[:, col] = df[col].apply(lambda x: x.isoformat() if pd.notna(x) else None)
+    
+    df = df.where(pd.notna(df), None)
+
     headers = df.columns.tolist()
     total_rows = len(df)
 
@@ -52,14 +69,20 @@ def save_import_data_from_df(import_instance: Import, df: pd.DataFrame) -> None:
 
     import_data_objects = [
         ImportData(import_model=import_instance, data={
-            header: (value if pd.notnull(value) else None)
+            header: (
+                value.isoformat() if isinstance(value, (pd.Timestamp, datetime.datetime)) else 
+                (None if pd.isna(value) else value)
+            )
             for header, value in zip(headers, row)
         })
         for row in df.itertuples(index=False, name=None)
     ]
-
-    if import_data_objects:
-        ImportData.objects.bulk_create(import_data_objects)
+    
+    try:
+        if import_data_objects:
+            ImportData.objects.bulk_create(import_data_objects)
+    except IntegrityError as e:
+        raise Exception(f"Database error during bulk insert: {str(e)}")
 
 def df_from_import_model(import_id: int) -> pd.DataFrame:
     try:
@@ -78,7 +101,10 @@ def df_from_import_model(import_id: int) -> pd.DataFrame:
         df = pd.DataFrame(df_data, columns=headers)
 
         for col in df.columns:
-            df[col] = pd.to_numeric(df[col], errors='ignore')  
+            try:
+                df[col] = pd.to_numeric(df[col])
+            except (ValueError, TypeError):
+                pass
 
         return df
 

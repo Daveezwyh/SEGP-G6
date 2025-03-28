@@ -24,6 +24,7 @@ def scan_df_for_duplicates(df: pd.DataFrame) -> List[ScanResult]:
                 col=-1,  # No specific column as the entire row is duplicated
                 message=f"Row {index + 1} is duplicated",
                 action_type=SRActionType.ONE_OPTIONAL,
+                priority=1000,
                 actions=actions
             )
         )
@@ -122,6 +123,7 @@ def scan_df_for_missing(df: pd.DataFrame) -> List[ScanResult]:
                 col=col_idx,
                 message=f"Missing value in row {row_idx+1}, column '{col_name}'",
                 action_type=SRActionType.ONE_OPTIONAL,
+                priority=1000,
                 actions=actions
             )
         )
@@ -161,6 +163,7 @@ def scan_df_for_outliers(df: pd.DataFrame) -> List[ScanResult]:
                     col=col_idx,
                     message=f"Outlier detected in column '{col}' at row {idx+1}",
                     action_type=SRActionType.ONE_OPTIONAL,
+                    priority=900,
                     actions=actions
                 )
             )
