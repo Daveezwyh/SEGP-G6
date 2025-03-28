@@ -8,8 +8,7 @@ from sklearn.feature_selection import VarianceThreshold
 import matplotlib.pyplot as plt
 import seaborn as sns
 from statsmodels.stats.outliers_influence import variance_inflation_factor
-
-from backend.autoclean.api.models import TaskProgress
+#from backend.autoclean.api.models import TaskProgress
 
 def clean_data(
     df: pd.DataFrame,
@@ -59,13 +58,13 @@ def clean_data(
     remove_sparse: bool = True
     remove_collinear: bool = True
 
-    task_progress: TaskProgress = None
+    # task_progress: TaskProgress = None
 
-    def update_progress(step_message: str, progress_increment: float):
-        if task_progress:
-            task_progress.percentage += progress_increment
-            task_progress.message = step_message
-            task_progress.save()
+    # def update_progress(step_message: str, progress_increment: float):
+    #     if task_progress:
+    #         task_progress.percentage += progress_increment
+    #         task_progress.message = step_message
+    #         task_progress.save()
 
     df = df.copy()
 
@@ -256,36 +255,36 @@ def clean_data(
         return df[all_cols]
 
     df = _remove_duplicates(df)
-    update_progress("Removed duplicates", 14.3)
+    #update_progress("Removed duplicates", 14.3)
     
     df = _handle_missing_values(df)
-    update_progress("Handled missing values", 14.3)
+    #update_progress("Handled missing values", 14.3)
     
     df = _detect_outliers(df, contamination)
-    update_progress("Detected and removed outliers", 14.3)
+    #update_progress("Detected and removed outliers", 14.3)
     
     df = _process_dates(df, handle_dates, extract_dates)
-    update_progress("Processed dates", 14.3)
+    #update_progress("Processed dates", 14.3)
     
     df = _clean_text(df, text_cleaning)
-    update_progress("Cleaned text", 14.3)
+    #update_progress("Cleaned text", 14.3)
     
     df = _encode_categoricals(df, max_unique_count, numeric_threshold, max_onehot_features)
-    update_progress("Encoded categorical features", 14.3)
+    #update_progress("Encoded categorical features", 14.3)
     
     df = _remove_sparse_features(df, remove_sparse)
-    update_progress("Removed sparse features", 14.3)
+    #update_progress("Removed sparse features", 14.3)
     
     df = _remove_collinear_features(df, remove_collinear)
-    update_progress("Removed collinear features", 14.3)
+    #update_progress("Removed collinear features", 14.3)
 
-    if task_progress:
-        task_progress.status = TaskProgress.Status.COMPLETED.value
-        task_progress.message = "Data cleaning completed"
-        task_progress.percentage = 100.0
-        task_progress.save()
+    # if task_progress:
+    #     task_progress.status = TaskProgress.Status.COMPLETED.value
+    #     task_progress.message = "Data cleaning completed"
+    #     task_progress.percentage = 100.0
+    #     task_progress.save()
     
-    return df
+    # return df
 
 generate_report: bool = False,
 output_path: str = "cleaning_report.html"
