@@ -10,8 +10,9 @@ export default function InfoDetails() {
   const { id } = useParams();
   const navigate = useNavigate();
   const token = useSelector((state) => state.user.token) || getToken();
-  
+
   const [details, setDetails] = useState(null);
+  const [statusText, setStatusText] = useState("");
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState(null);
   const [page, setPage] = useState(1);
@@ -22,32 +23,18 @@ export default function InfoDetails() {
   const [scanResults, setScanResult] = useState([]);
   const [loadingScan, setLoadingScan] = useState(false);
   const [errorScan, setErrorScan] = useState(null);
-
+  // jumpEnabled controls whether jump-on-activation is enabled
+  const [jumpEnabled, setJumpEnabled] = useState(false);
+  // highlightCell stores the cell to be highlighted { row, col } (relative to current page)
+  const [highlightCell, setHighlightCell] = useState(null);
+  // pendingHighlight stores the global row/col info for the cell that should be highlighted after page change
+  const [pendingHighlight, setPendingHighlight] = useState(null);
   const [showProgressModal, setShowProgressModal] = useState(false);
   const [progressUuid, setProgressUuid] = useState("");
   const [progress, setProgress] = useState(0);
   const [progressStatus, setProgressStatus] = useState("processing");
   const [pollingIntervalId, setPollingIntervalId] = useState(null);
-
-  useEffect(() => {
-    if (!id) return;
-    fetchDetails();
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [id, page, pageSize]);
-
-  useEffect(() => {
-    if (activeTab === 1) {
-      fetchScanResults();
-    }
-  }, [activeTab]);
-
-  useEffect(() => {
-    return () => {
-      if (pollingIntervalId) {
-        clearInterval(pollingIntervalId);
-      }
-    };
-  }, [pollingIntervalId]);
+  const [expandedDetails, setExpandedDetails] = useState({});
 
   const totalPages = details ? Math.ceil(details.count / pageSize) : 1;
 
@@ -64,6 +51,7 @@ export default function InfoDetails() {
     return [1, "...", page - 1, page, page + 1, "...", totalPages];
   };
 
+  // Fetch import details data
   const fetchDetails = async () => {
     setLoading(true);
     setError(null);
@@ -78,14 +66,12 @@ export default function InfoDetails() {
           },
         }
       );
-
       if (res.status === 404) {
         setError("File has already been cleaned.");
         setDetails(null);
         setLoading(false);
         return;
       }
-
       if (!res.ok) throw new Error(`Server error: ${res.status}`);
 
       const data = await res.json();
@@ -94,6 +80,21 @@ export default function InfoDetails() {
       if (data.results?.length > 0) {
         setHeaders(Object.keys(data.results[0].data));
       }
+
+      // If there is a pending highlight request, calculate the row index in this page and highlight the cell.
+      if (pendingHighlight) {
+        // Calculate the row index on this page (global row % pageSize)
+        const rowInPage = pendingHighlight.row % pageSize;
+        if (data.results && rowInPage < data.results.length) {
+          setHighlightCell({ row: rowInPage, col: pendingHighlight.col });
+          // Clear the highlight after 1 second
+          setTimeout(() => {
+            setHighlightCell(null);
+          }, 1000);
+        }
+        // Clear pending highlight
+        setPendingHighlight(null);
+      }
     } catch (err) {
       setError(err.message);
     } finally {
@@ -101,26 +102,42 @@ export default function InfoDetails() {
     }
   };
 
+  // Fetch the status_text from the import
+  const fetchStatusText = async () => {
+    try {
+      const res = await fetch(`http://35.213.150.144:8000/api/imports/${id}/`, {
+        method: "GET",
+        headers: {
+          "Content-Type": "application/json",
+          Authorization: `Bearer ${token}`,
+        },
+      });
+      if (res.ok) {
+        const data = await res.json();
+        setStatusText(data.status_text);
+      }
+    } catch (err) {
+      console.error("Failed to fetch status_text:", err);
+    }
+  };
+
+  // Fetch scan results, storing row and col info from the backend
   const fetchScanResults = async () => {
     setLoadingScan(true);
     setErrorScan(null);
     try {
-      const res = await fetch(
-        `http://35.213.150.144:8000/api/imports/${id}/scan-results/`,
-        {
-          method: "GET",
-          headers: {
-            "Content-Type": "application/json",
-            Authorization: `Bearer ${token}`,
-          },
-        }
-      );
+      const res = await fetch(`http://35.213.150.144:8000/api/imports/${id}/scan-results/`, {
+        method: "GET",
+        headers: {
+          "Content-Type": "application/json",
+          Authorization: `Bearer ${token}`,
+        },
+      });
       if (!res.ok) {
         throw new Error(`Server error: ${res.status}`);
       }
 
       const data = await res.json();
-
       let rawArray = [];
       if (Array.isArray(data)) {
         rawArray = data;
@@ -130,6 +147,9 @@ export default function InfoDetails() {
 
       const result = rawArray.map((item) => ({
         message: item.message,
+        import_scan_result_id: item.id,
+        row: item.row, // Store the global row index
+        col: item.col, // Store the column index
         actions: item.actions || [],
       }));
 
@@ -149,7 +169,7 @@ export default function InfoDetails() {
       showCancelButton: true,
       confirmButtonColor: "#3085d6",
       cancelButtonColor: "#d33",
-      confirmButtonText: "Yes, clean it",
+      confirmButtonText: "Yes",
     }).then(async (result) => {
       if (result.isConfirmed) {
         try {
@@ -178,7 +198,6 @@ export default function InfoDetails() {
             setShowProgressModal(true);
             setProgress(0);
             setProgressStatus("processing");
-
             startPolling(data.task_progress_uuid);
           } else {
             Swal.fire("Error", "No task_progress_uuid returned by server.", "error");
@@ -192,15 +211,12 @@ export default function InfoDetails() {
 
   const handleExport = async () => {
     try {
-      const res = await fetch(
-        `http://35.213.150.144:8000/api/imports/${id}/export/`,
-        {
-          method: "GET",
-          headers: {
-            Authorization: `Bearer ${token}`,
-          },
-        }
-      );
+      const res = await fetch(`http://35.213.150.144:8000/api/imports/${id}/export/`, {
+        method: "GET",
+        headers: {
+          Authorization: `Bearer ${token}`,
+        },
+      });
 
       let errorBody = null;
       if (!res.ok) {
@@ -210,7 +226,7 @@ export default function InfoDetails() {
           console.error("Failed to parse error body:", err);
         }
       }
-  
+
       if (res.status === 400 && errorBody?.error === "Import has not yet been processed.") {
         Swal.fire("Notice", "File is not cleaned yet, please clean it before exporting.", "info");
         return;
@@ -224,7 +240,7 @@ export default function InfoDetails() {
       if (!res.ok) {
         throw new Error(errorBody?.error || `Export failed: ${res.status}`);
       }
-  
+
       const blob = await res.blob();
       const downloadUrl = window.URL.createObjectURL(blob);
       const link = document.createElement("a");
@@ -236,17 +252,15 @@ export default function InfoDetails() {
     } catch (err) {
       Swal.fire("Error", err.message, "error");
     }
-  };  
+  };
 
   const startPolling = (uuid) => {
     if (pollingIntervalId) {
       clearInterval(pollingIntervalId);
     }
-
     const intervalId = setInterval(() => {
       pollProgress(uuid);
     }, 1000);
-
     setPollingIntervalId(intervalId);
   };
 
@@ -263,7 +277,6 @@ export default function InfoDetails() {
         throw new Error(`Failed to fetch progress: ${res.status}`);
       }
       const data = await res.json();
-
       const newProgress = parseFloat(data.percentage || "0");
       setProgress(newProgress);
       setProgressStatus(data.status || "processing");
@@ -286,40 +299,159 @@ export default function InfoDetails() {
       setPollingIntervalId(null);
     }
     setShowProgressModal(false);
-
     fetchDetails();
   };
 
   const TOTAL_SEGMENTS = 10;
   const segmentsActive = Math.round((progress / 100) * TOTAL_SEGMENTS);
 
+  /**
+   * flashCell:
+   * 1. Switch to "Import Data" tab.
+   * 2. After a short delay, set highlightCell to flash the target cell.
+   */
+  const flashCell = (rowIndex, colIndex) => {
+    // Switch to "Import Data" tab
+    setActiveTab(0);
+    // Wait for the panel to switch
+    setTimeout(() => {
+      setHighlightCell({ row: rowIndex, col: colIndex });
+      // Clear highlight after 1 second
+      setTimeout(() => {
+        setHighlightCell(null);
+      }, 1000);
+    }, 300);
+  };
+
+  /**
+   * toggleActivate:
+   * 1. Optimistically update the local state.
+   * 2. Send the PATCH request.
+   * 3. If successful and jumpEnabled is true, calculate target page based on global row,
+   *    set pendingHighlight, and switch to the correct page.
+   */
+  const toggleActivate = async (scanIdx, actionIdx) => {
+    const scanItem = scanResults[scanIdx];
+    const action = scanItem.actions[actionIdx];
+    const newActivate = !action.activate;
+
+    // 1. Update local state optimistically
+    setScanResult((prev) => {
+      const updated = [...prev];
+      updated[scanIdx] = {
+        ...updated[scanIdx],
+        actions: [...updated[scanIdx].actions],
+      };
+      updated[scanIdx].actions[actionIdx] = {
+        ...action,
+        activate: newActivate,
+      };
+      return updated;
+    });
+
+    // 2. Send PATCH request to backend
+    try {
+      const response = await fetch("http://35.213.150.144:8000/api/import-scanresult-action/update/", {
+        method: "PATCH",
+        headers: {
+          "Content-Type": "application/json",
+          Authorization: `Bearer ${token}`,
+        },
+        body: JSON.stringify({
+          id: action.id,
+          import_scan_result_id: scanItem.import_scan_result_id,
+          activate: newActivate,
+        }),
+      });
+
+      if (!response.ok) {
+        throw new Error(`Failed to update toggle: ${response.status}`);
+      }
+
+      // 3. If activation is successful and jump is enabled, calculate the target page.
+      if (newActivate && jumpEnabled) {
+        // Calculate target page (global row is 0-indexed)
+        const targetPage = Math.floor(scanItem.row / pageSize) + 1;
+        setPendingHighlight({ row: scanItem.row, col: scanItem.col });
+        
+        // If targetPage is different from the current page, update the page state.
+        if (targetPage !== page) {
+          setPage(targetPage);
+        } else {
+          // If already on the target page, force a data refresh to process pendingHighlight
+          fetchDetails();
+        }
+        setActiveTab(0);
+      }      
+    } catch (err) {
+      // Rollback the local state if request fails
+      Swal.fire("Error", err.message, "error");
+      setScanResult((prev) => {
+        const updated = [...prev];
+        updated[scanIdx] = {
+          ...updated[scanIdx],
+          actions: [...updated[scanIdx].actions],
+        };
+        updated[scanIdx].actions[actionIdx] = {
+          ...action,
+          activate: action.activate, // revert back
+        };
+        return updated;
+      });
+    }
+  };
+
+  useEffect(() => {
+    if (!id) return;
+    fetchDetails();
+    fetchStatusText();
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [id, page, pageSize]);
+
+  useEffect(() => {
+    if (activeTab === 1) {
+      fetchScanResults();
+    }
+  }, [activeTab]);
+
+  useEffect(() => {
+    return () => {
+      if (pollingIntervalId) {
+        clearInterval(pollingIntervalId);
+      }
+    };
+  }, [pollingIntervalId]);
+
   return (
     <div className="min-h-screen min-w-max dark:bg-slate-700 dark:text-cyan-400 relative">
       <Header />
       <div className="flex">
         <div className="flex-1 p-9 rounded-lg shadow-md">
-          <h1 className="text-xl font-bold mb-4">File Details (ID: {id})</h1>
+          <h1 className="text-xl font-bold mb-4">
+            File Details (ID: {id})
+            {statusText && <span className="ml-4 text-xl font-bold">Status: {statusText}</span>}
+          </h1>
 
-          {/* ------------------ Tab Section ------------------ */}
+          {/* Tab Section */}
           <div className="mt-6 border-b border-gray-300 dark:border-gray-700">
             <ul className="flex space-x-0 border-b dark:border-gray-600">
               {["Import Data", "Scan Results"].map((tab, index) => (
                 <li
                   key={index}
-                  className={`p-3 px-3 cursor-pointer transition-all duration-300
-                    ${
-                      activeTab === index
-                        ? "border-b-2 border-blue-500 text-black font-semibold bg-gray-100"
-                        : "text-blue-500 hover:text-blue-700"
-                    }`}
+                  className={`p-3 px-3 cursor-pointer transition-all duration-300 ${
+                    activeTab === index
+                      ? "border-b-2 border-blue-500 text-black font-semibold bg-gray-100"
+                      : "text-blue-500 hover:text-blue-700"
+                  }`}
                   onClick={() => setActiveTab(index)}
                 >
                   {tab}
                 </li>
               ))}
             </ul>
+
             <div className="p-6 bg-white rounded-lg shadow-md transition-opacity duration-300">
-              {/* --- Import Data Tab --- */}
+              {/* Import Data Tab */}
               {activeTab === 0 && (
                 <div>
                   <div className="mb-4 flex items-center justify-between">
@@ -343,24 +475,22 @@ export default function InfoDetails() {
                       />
                     </div>
                     <div className="flex items-center space-x-2">
-                      {/* Clean button */}
                       <button
                         onClick={handleClean}
                         className="px-4 py-2 bg-red-500 hover:bg-red-600 text-white rounded"
                       >
                         Clean
                       </button>
-                      {/* Export File button */}
                       <button
                         onClick={handleExport}
                         className="px-4 py-2 bg-green-500 hover:bg-green-600 text-white rounded"
                       >
-                        Export File
+                        Export
                       </button>
                     </div>
                   </div>
 
-                  {/* File details content */}
+                  {/* File Details Content */}
                   <div className="bg-white dark:bg-gray-800 rounded-lg shadow p-4 text-black dark:text-gray-200">
                     {loading ? (
                       <p>Loading...</p>
@@ -388,19 +518,27 @@ export default function InfoDetails() {
                               </tr>
                             </thead>
                             <tbody>
-                              {details.results.map((record) => (
+                              {details.results.map((record, rowIndex) => (
                                 <tr
                                   key={record.id}
                                   className="border-b border-gray-150 hover:bg-gray-300 dark:hover:bg-gray-600"
                                 >
-                                  {headers.map((header) => (
-                                    <td
-                                      key={header}
-                                      className="px-4 py-2 break-words text-left max-w-[400px]"
-                                    >
-                                      {record.data[header] ?? "-"}
-                                    </td>
-                                  ))}
+                                  {headers.map((header, colIndex) => {
+                                    const isHighlight =
+                                      highlightCell &&
+                                      highlightCell.row === rowIndex &&
+                                      highlightCell.col === colIndex;
+                                    return (
+                                      <td
+                                        key={header}
+                                        className={`px-4 py-2 break-words text-left max-w-[400px] ${
+                                          isHighlight ? "bg-yellow-200 animate-pulse" : ""
+                                        }`}
+                                      >
+                                        {record.data[header] ?? "-"}
+                                      </td>
+                                    );
+                                  })}
                                 </tr>
                               ))}
                             </tbody>
@@ -483,42 +621,103 @@ export default function InfoDetails() {
                 </div>
               )}
 
-              {/* --- Scan Results Tab --- */}
+              {/* Scan Results Tab */}
               {activeTab === 1 && (
                 <div>
-                  <h2 className="text-lg pb-2 font-bold">🔥 Scan Results</h2>
+                  <div className="flex items-center space-x-4 mb-2">
+                    <h2 className="text-lg font-bold">🔥 Scan Results</h2>
+                      <label className="inline-flex items-center cursor-pointer">
+                      <span className="mr-3 text-sm font-medium text-gray-700 dark:text-gray-300">
+                        Enable Jump
+                      </span>
+                      <div className="relative">
+                        <input
+                          type="checkbox"
+                          checked={jumpEnabled}
+                          onChange={() => setJumpEnabled(!jumpEnabled)}
+                          className="peer sr-only"
+                        />
+                        <div className="w-11 h-6 bg-gray-300 rounded-full peer peer-checked:bg-blue-500 transition-colors"></div>
+                        <div className="absolute left-0 top-0 w-6 h-6 bg-white border border-gray-300 rounded-full shadow-md transform transition-transform peer-checked:translate-x-5"></div>
+                      </div>
+                    </label>
+                  </div>
+
                   {loadingScan ? (
                     <p>Loading scan results...</p>
                   ) : errorScan ? (
-                    <p className="text-red-500">Error: {errorScan}</p>
+                    <p className="text-red-500 dark:text-gray-300">Error: {errorScan}</p>
                   ) : scanResults.length > 0 ? (
                     <div className="space-y-2">
                       {scanResults.map((scan, idx) => (
                         <details
                           key={idx}
+                          open={!!expandedDetails[idx]}
+                          onToggle={(e) => {
+                            setExpandedDetails((prev) => ({
+                              ...prev,
+                              [idx]: e.target.open,
+                            }));
+                          }}
                           className="border border-gray-300 rounded-lg p-3 bg-white dark:bg-gray-800"
                         >
-                          <summary className="cursor-pointer font-semibold text-red-600">
+                          <summary className="cursor-pointer font-semibold text-red-600 dark:text-red-400">
                             Problem detected: {scan.message}
                           </summary>
+
                           {scan.actions.length > 0 ? (
                             <div className="mt-2 text-gray-700 dark:text-cyan-400">
                               {scan.actions.map((action, actionIdx) => (
-                                <ul key={actionIdx} className="my-4">
-                                  <div className="list-group">
-                                    <a className="border p-2 rounded-lg bg-gray-100 dark:bg-slate-800">
-                                      <strong>ID:</strong> {action.id}
-                                    </a>
-                                    <a className="border p-2 rounded-lg bg-gray-100 dark:bg-slate-800">
-                                      <strong>Title:</strong> {action.title}
-                                    </a>
-                                    <a className="border p-2 rounded-lg bg-gray-100 dark:bg-slate-800">
-                                      <strong>Description:</strong> {action.description}
-                                    </a>
-                                    <a className="border p-2 rounded-lg bg-gray-100 dark:bg-slate-800">
-                                      <strong>Cleaner:</strong> {action.cleaner}
-                                    </a>
-                                  </div>
+                                <ul key={actionIdx} className="my-4 space-y-3">
+                                  <li className="rounded-lg border border-gray-200 dark:border-slate-700 bg-gray-50 dark:bg-slate-700 p-4 shadow-sm">
+                                    <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 text-sm">
+                                      <div>
+                                        <span className="font-semibold text-gray-600 dark:text-gray-300">
+                                          ID:
+                                        </span>{" "}
+                                        <span className="text-gray-800 dark:text-white">
+                                          {action.id}
+                                        </span>
+                                      </div>
+                                      <div>
+                                        <span className="font-semibold text-gray-600 dark:text-gray-300">
+                                          Title:
+                                        </span>{" "}
+                                        <span className="text-gray-800 dark:text-white">
+                                          {action.title}
+                                        </span>
+                                      </div>
+                                      <div className="sm:col-span-2">
+                                        <span className="font-semibold text-gray-600 dark:text-gray-300">
+                                          Description:
+                                        </span>{" "}
+                                        <span className="text-gray-800 dark:text-white">
+                                          {action.description}
+                                        </span>
+                                      </div>
+                                      <div>
+                                        <span className="font-semibold text-gray-600 dark:text-gray-300">
+                                          Cleaner:
+                                        </span>{" "}
+                                        <span className="text-blue-500">{action.cleaner}</span>
+                                      </div>
+                                      <div className="flex justify-between items-center sm:justify-start sm:gap-3">
+                                        <span className="font-semibold text-gray-600 dark:text-gray-300">
+                                          Activate:
+                                        </span>
+                                        <span
+                                          onClick={() => toggleActivate(idx, actionIdx)}
+                                          className={`px-3 py-1 rounded-full text-sm font-semibold transition-colors duration-200 cursor-pointer shadow-sm border ${
+                                            action.activate
+                                              ? "bg-green-100 text-green-700 dark:bg-green-800 dark:text-green-300"
+                                              : "bg-red-100 text-red-700 dark:bg-red-800 dark:text-red-300"
+                                          }`}
+                                        >
+                                          {action.activate ? "On" : "Off"}
+                                        </span>
+                                      </div>
+                                    </div>
+                                  </li>
                                 </ul>
                               ))}
                             </div>
@@ -540,13 +739,13 @@ export default function InfoDetails() {
         </div>
       </div>
 
-      {/* Progress bar popup (displayed only when showProgressModal=true) */}
+      {/* Progress bar popup */}
       {showProgressModal && (
         <div className="fixed inset-0 flex items-center justify-center bg-black bg-opacity-50 backdrop-blur-sm z-50">
           <div className="bg-yellow-50 border border-black rounded-lg px-8 py-6 shadow-md flex flex-col items-center">
             <div className="bg-white rounded-lg px-6 py-4 w-[300px] flex flex-col items-center shadow-sm">
               <div className="text-gray-700 font-medium mb-3 text-lg">
-                Processing, {progress.toFixed(2)}%
+                Processing...{progress.toFixed(0)}%
               </div>
               <div className="flex space-x-2">
                 {Array.from({ length: TOTAL_SEGMENTS }, (_, i) => {
@@ -563,12 +762,9 @@ export default function InfoDetails() {
                 })}
               </div>
               <p className="text-sm mt-3 text-gray-600">
-                {progressStatus === "completed" || progress >= 100
-                  ? "Completed"
-                  : "Processing..."}
+                {progressStatus === "completed" || progress >= 100 ? "Completed" : "Processing..."}
               </p>
 
-              {/* Finish Button */}
               <button
                 onClick={handleFinish}
                 disabled={progress < 100 && progressStatus !== "completed"}

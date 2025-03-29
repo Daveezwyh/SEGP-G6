@@ -13,8 +13,8 @@ export default function Header() {
 
     useEffect(() => {
         document.body.classList.toggle("dark", darkMode);
-         localStorage.setItem("darkMode", darkMode);
-     }, [darkMode]);
+        localStorage.setItem("darkMode", darkMode);
+    }, [darkMode]);
 
     const toggleDarkMode = () => {
         setDarkMode((prevDarkMode) => !prevDarkMode);
