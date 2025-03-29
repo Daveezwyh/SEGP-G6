@@ -27,6 +27,8 @@ export default function InfoDetails() {
     const [progress, setProgress] = useState(0);
     const [progressStatus, setProgressStatus] = useState("processing");
     const [pollingIntervalId, setPollingIntervalId] = useState(null);
+    const [expandedDetails, setExpandedDetails] = useState({});
+
 
   useEffect(() => {
     if (!id) return;
@@ -129,6 +131,7 @@ export default function InfoDetails() {
 
       const result = rawArray.map((item) => ({
         message: item.message,
+        import_scan_result_id: item.id,
         actions: item.actions || [],
       }));
 
@@ -292,6 +295,64 @@ export default function InfoDetails() {
   const TOTAL_SEGMENTS = 10;
   const segmentsActive = Math.round((progress / 100) * TOTAL_SEGMENTS);
 
+  const toggleActivate = async (scanIdx, actionIdx) => {
+    const scanItem = scanResults[scanIdx];
+    const action = scanItem.actions[actionIdx];
+    const newActivate = !action.activate;
+  
+    // 1. Update local state optimistically
+    setScanResult((prev) => {
+      const updated = [...prev];
+      updated[scanIdx] = {
+        ...updated[scanIdx],
+        actions: [...updated[scanIdx].actions],
+      };
+      updated[scanIdx].actions[actionIdx] = {
+        ...action,
+        activate: newActivate,
+      };
+      return updated;
+    });
+  
+    // 2. Send patch request to backend
+    try {
+      const response = await fetch("http://35.213.150.144:8000/api/import-scanresult-action/update/", {
+        method: "PATCH",
+        headers: {
+          "Content-Type": "application/json",
+          Authorization: `Bearer ${token}`,
+        },
+        body: JSON.stringify({
+          id: action.id,
+          import_scan_result_id: scanItem.import_scan_result_id,
+          activate: newActivate,
+        }),
+      });
+  
+      if (!response.ok) {
+        throw new Error(`Failed to update toggle: ${response.status}`);
+      }
+  
+      // Success: no need to do anything else, data is already updated locally
+    } catch (err) {
+      // 3. If failed, revert back the state
+      Swal.fire("Error", err.message, "error");
+      // Revert state if error
+      setScanResult((prev) => {
+        const updated = [...prev];
+        updated[scanIdx] = {
+          ...updated[scanIdx],
+          actions: [...updated[scanIdx].actions],
+        };
+        updated[scanIdx].actions[actionIdx] = {
+          ...action,
+          activate: action.activate, // revert back to original
+        };
+        return updated;
+      });
+    }
+  };
+  
   return (
     <div className="min-h-screen min-w-max dark:bg-slate-700 dark:text-cyan-400 relative">
       <Header />
@@ -494,8 +555,16 @@ export default function InfoDetails() {
                             {scanResults.map((scan, idx) => (
                             <details
                             key={idx}
+                            open={!!expandedDetails[idx]}
+                            onToggle={(e) => {
+                              setExpandedDetails((prev) => ({
+                                ...prev,
+                                [idx]: e.target.open,
+                              }));
+                            }}
                             className="border border-gray-300 rounded-lg p-3 bg-white dark:bg-gray-800"
-                            >
+                          >
+                          
                             <summary className="cursor-pointer font-semibold text-red-600 dark: text-red 400">
                                 Problem detected: {scan.message}
                             </summary>
@@ -525,7 +594,8 @@ export default function InfoDetails() {
                                 <div className="flex justify-between items-center sm:justify-start sm:gap-3">
                                   <span className="font-semibold text-gray-600 dark:text-gray-300">Activate:</span>
                                   <span
-                                    className={`px-2 py-0.5 rounded-full text-sm font-semibold ${
+                                    onClick={() => toggleActivate(idx, actionIdx)}
+                                    className={`px-3 py-1 rounded-full text-sm font-semibold transition-colors duration-200 cursor-pointer shadow-sm border ${
                                       action.activate
                                         ? "bg-green-100 text-green-700 dark:bg-green-800 dark:text-green-300"
                                         : "bg-red-100 text-red-700 dark:bg-red-800 dark:text-red-300"
@@ -563,7 +633,7 @@ export default function InfoDetails() {
             <div className="bg-yellow-50 border border-black rounded-lg px-8 py-6 shadow-md flex flex-col items-center">
                 <div className="bg-white rounded-lg px-6 py-4 w-[300px] flex flex-col items-center shadow-sm">
                 <div className="text-gray-700 font-medium mb-3 text-lg">
-                    Processing, {progress.toFixed(2)}%
+                    Processing...{progress.toFixed(0)}%
                 </div>
                 <div className="flex space-x-2">
                     {Array.from({ length: TOTAL_SEGMENTS }, (_, i) => {
