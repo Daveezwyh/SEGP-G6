@@ -11,6 +11,7 @@ export default function InfoDetails() {
     const navigate = useNavigate();
     const token = useSelector((state) => state.user.token) || getToken();
     const [details, setDetails] = useState(null);
+    const [statusText, setStatusText] = useState("");
     const [loading, setLoading] = useState(false);
     const [error, setError] = useState(null);
     const [page, setPage] = useState(1);
@@ -21,6 +22,12 @@ export default function InfoDetails() {
     const [scanResults, setScanResult] = useState([]);
     const [loadingScan, setLoadingScan] = useState(false);
     const [errorScan, setErrorScan] = useState(null);
+    // jumpEnabled controls whether jump-on-activation is enabled
+    const [jumpEnabled, setJumpEnabled] = useState(false);
+    // highlightCell stores the cell to be highlighted { row, col } (relative to current page)
+    const [highlightCell, setHighlightCell] = useState(null);
+    // pendingHighlight stores the global row/col info for the cell that should be highlighted after page change
+    const [pendingHighlight, setPendingHighlight] = useState(null);
 
     const [showProgressModal, setShowProgressModal] = useState(false);
     const [progressUuid, setProgressUuid] = useState("");
@@ -30,9 +37,12 @@ export default function InfoDetails() {
     const [expandedDetails, setExpandedDetails] = useState({});
 
 
+    
+
   useEffect(() => {
     if (!id) return;
     fetchDetails();
+    fetchStatusText();
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [id, page, pageSize]);
 
@@ -40,7 +50,7 @@ export default function InfoDetails() {
     if (activeTab === 1) {
       fetchScanResults();
     }
-  }, [activeTab]); // Runs whenever activeTab changes
+  }, [activeTab]);
 
   useEffect(() => {
     return () => {
@@ -49,7 +59,7 @@ export default function InfoDetails() {
       }
     };
   }, [pollingIntervalId]);
-
+  
   const totalPages = details ? Math.ceil(details.count / pageSize) : 1;
  
    const getPageNumbers = () => {
@@ -93,6 +103,20 @@ export default function InfoDetails() {
       if (data.results?.length > 0) {
         setHeaders(Object.keys(data.results[0].data));
       }
+
+      if (pendingHighlight) {
+        // Calculate the row index on this page (global row % pageSize)
+        const rowInPage = pendingHighlight.row % pageSize;
+        if (data.results && rowInPage < data.results.length) {
+          setHighlightCell({ row: rowInPage, col: pendingHighlight.col });
+          // Clear the highlight after 1 second
+          setTimeout(() => {
+            setHighlightCell(null);
+          }, 1000);
+        }
+        // Clear pending highlight
+        setPendingHighlight(null);
+      }
     } catch (err) {
       setError(err.message);
     } finally {
@@ -100,7 +124,23 @@ export default function InfoDetails() {
     }
   };
 
-  
+  const fetchStatusText = async () => {
+    try {
+      const res = await fetch(`http://35.213.150.144:8000/api/imports/${id}/`, {
+        method: "GET",
+        headers: {
+          "Content-Type": "application/json",
+          Authorization: `Bearer ${token}`,
+        },
+      });
+      if (res.ok) {
+        const data = await res.json();
+        setStatusText(data.status_text);
+      }
+    } catch (err) {
+      console.error("Failed to fetch status_text:", err);
+    }
+  };
 
   const fetchScanResults = async () => {
     setLoadingScan(true);
@@ -132,6 +172,8 @@ export default function InfoDetails() {
       const result = rawArray.map((item) => ({
         message: item.message,
         import_scan_result_id: item.id,
+        row: item.row,
+        col: item.col,
         actions: item.actions || [],
       }));
 
@@ -180,7 +222,6 @@ export default function InfoDetails() {
               setShowProgressModal(true);
               setProgress(0);
               setProgressStatus("processing");
-  
               startPolling(data.task_progress_uuid);
             } else {
               Swal.fire("Error", "No task_progress_uuid returned by server.", "error");
@@ -201,8 +242,7 @@ export default function InfoDetails() {
           headers: {
             Authorization: `Bearer ${token}`,
           },
-        }
-      );
+        });
 
       let errorBody = null;
       if (!res.ok) {
@@ -295,11 +335,36 @@ export default function InfoDetails() {
   const TOTAL_SEGMENTS = 10;
   const segmentsActive = Math.round((progress / 100) * TOTAL_SEGMENTS);
 
+  /**
+    * flashCell:
+    * 1. Switch to "Import Data" tab.
+    * 2. After a short delay, set highlightCell to flash the target cell.
+    */
+  const flashCell = (rowIndex, colIndex) => {
+    // Switch to "Import Data" tab
+    setActiveTab(0);
+    // Wait for the panel to switch
+    setTimeout(() => {
+      setHighlightCell({ row: rowIndex, col: colIndex });
+      // Clear highlight after 1 second
+      setTimeout(() => {
+        setHighlightCell(null);
+      }, 1000);
+    }, 300);
+  };
+
+  /**
+   * toggleActivate:
+   * 1. Optimistically update the local state.
+   * 2. Send the PATCH request.
+   * 3. If successful and jumpEnabled is true, calculate target page based on global row,
+   *    set pendingHighlight, and switch to the correct page.
+   */
   const toggleActivate = async (scanIdx, actionIdx) => {
     const scanItem = scanResults[scanIdx];
     const action = scanItem.actions[actionIdx];
     const newActivate = !action.activate;
-  
+
     // 1. Update local state optimistically
     setScanResult((prev) => {
       const updated = [...prev];
@@ -313,8 +378,8 @@ export default function InfoDetails() {
       };
       return updated;
     });
-  
-    // 2. Send patch request to backend
+
+    // 2. Send PATCH request to backend
     try {
       const response = await fetch("http://35.213.150.144:8000/api/import-scanresult-action/update/", {
         method: "PATCH",
@@ -328,16 +393,29 @@ export default function InfoDetails() {
           activate: newActivate,
         }),
       });
-  
+
       if (!response.ok) {
         throw new Error(`Failed to update toggle: ${response.status}`);
       }
-  
-      // Success: no need to do anything else, data is already updated locally
+
+      // 3. If activation is successful and jump is enabled, calculate the target page.
+      if (newActivate && jumpEnabled) {
+        // Calculate target page (global row is 0-indexed)
+        const targetPage = Math.floor(scanItem.row / pageSize) + 1;
+        setPendingHighlight({ row: scanItem.row, col: scanItem.col });
+        
+        // If targetPage is different from the current page, update the page state.
+        if (targetPage !== page) {
+          setPage(targetPage);
+        } else {
+          // If already on the target page, force a data refresh to process pendingHighlight
+          fetchDetails();
+        }
+        setActiveTab(0);
+      }      
     } catch (err) {
-      // 3. If failed, revert back the state
+      // Rollback the local state if request fails
       Swal.fire("Error", err.message, "error");
-      // Revert state if error
       setScanResult((prev) => {
         const updated = [...prev];
         updated[scanIdx] = {
@@ -346,32 +424,34 @@ export default function InfoDetails() {
         };
         updated[scanIdx].actions[actionIdx] = {
           ...action,
-          activate: action.activate, // revert back to original
+          activate: action.activate, // revert back
         };
         return updated;
       });
     }
   };
-  
+
   return (
     <div className="min-h-screen min-w-max dark:bg-slate-700 dark:text-cyan-400 relative">
       <Header />
       <div className="flex">
       <div className="flex-1 p-9 rounded-lg shadow-md">
-          <h1 className="text-xl font-bold mb-4">File Details (ID: {id})</h1>
+      <h1 className="text-xl font-bold mb-4">
+          File Details (ID: {id})
+      </h1>
+      {statusText && <p className="mb-4 text-xl font-bold">Status: {statusText}</p>}
 
-        {/* ------------------ Tab Section ------------------ */}
+        {/* Tab Section */}
            <div className="mt-6 border-b border-gray-300 dark:border-gray-700">
              <ul className="flex space-x-0 border-b dark:border-gray-600">
                {["Import Data", "Scan Results"].map((tab, index) => (
                  <li
                    key={index}
-                   className={`p-3 px-3 cursor-pointer transition-all duration-300
-                     ${
-                       activeTab === index
-                         ? "border-b-2 border-blue-500 text-black font-semibold bg-gray-100"
-                         : "text-blue-500 hover:text-blue-700"
-                     }`}
+                   className={`p-3 px-3 cursor-pointer transition-all duration-300 ${
+                    activeTab === index
+                      ? "border-b-2 border-blue-500 text-black font-semibold bg-gray-100"
+                      : "text-blue-500 hover:text-blue-700"
+                  }`}
                    onClick={() => setActiveTab(index)}
                  >
                    {tab}
@@ -403,14 +483,12 @@ export default function InfoDetails() {
                        />
                      </div>
                      <div className="flex items-center space-x-2">
-                       {/* Clean button */}
                        <button
                          onClick={handleClean}
                          className="px-4 py-2 bg-red-500 hover:bg-red-600 text-white rounded"
                        >
                          Clean
                        </button>
-                       {/* Export File button */}
                       <button
                         onClick={handleExport}
                          className="px-4 py-2 bg-green-500 hover:bg-green-600 text-white rounded"
@@ -448,19 +526,27 @@ export default function InfoDetails() {
                                </tr>
                              </thead>
                              <tbody>
-                               {details.results.map((record) => (
+                               {details.results.map((record, rowIndex) => (
                                  <tr
                                    key={record.id}
                                    className="border-b border-gray-150 hover:bg-gray-300 dark:hover:bg-gray-600"
                                  >
-                                   {headers.map((header) => (
-                                     <td
-                                       key={header}
-                                       className="px-4 py-2 break-words text-left max-w-[400px]"
-                                     >
-                                       {record.data[header] ?? "-"}
-                                     </td>
-                                   ))}
+                                   {headers.map((header, colIndex) => {
+                                     const isHighlight =
+                                       highlightCell &&
+                                       highlightCell.row === rowIndex &&
+                                       highlightCell.col === colIndex;
+                                     return (
+                                       <td
+                                         key={header}
+                                         className={`px-4 py-2 break-words text-left max-w-[400px] ${
+                                           isHighlight ? "bg-yellow-200 animate-pulse" : ""
+                                         }`}
+                                       >
+                                         {record.data[header] ?? "-"}
+                                       </td>
+                                     );
+                                   })}
                                  </tr>
                                ))}
                              </tbody>
@@ -545,11 +631,28 @@ export default function InfoDetails() {
 
         {activeTab === 1 && (
                 <div>
-                  <h2 className="text-lg pb-2 font-bold">🔥 Scan Results</h2>
+                  <div className="flex items-center space-x-4 mb-2">
+                     <h2 className="text-lg font-bold">🔥 Scan Results</h2>
+                       <label className="inline-flex items-center cursor-pointer">
+                       <span className="mr-3 text-sm font-medium text-gray-700 dark:text-gray-300">
+                         Enable Jump
+                       </span>
+                       <div className="relative">
+                         <input
+                           type="checkbox"
+                           checked={jumpEnabled}
+                           onChange={() => setJumpEnabled(!jumpEnabled)}
+                           className="peer sr-only"
+                         />
+                         <div className="w-11 h-6 bg-gray-300 rounded-full peer peer-checked:bg-blue-500 transition-colors"></div>
+                         <div className="absolute left-0 top-0 w-6 h-6 bg-white border border-gray-300 rounded-full shadow-md transform transition-transform peer-checked:translate-x-5"></div>
+                       </div>
+                     </label>
+                   </div>
                   {loadingScan ? (
                     <p>Loading scan results...</p>
                   ) : errorScan ? (
-                    <p className="text-red-500 dark: text-gray-300">Error: {errorScan}</p>
+                    <p className="text-red-500 dark:text-gray-300">Error: {errorScan}</p>
                   ) : scanResults.length > 0 ? (
                     <div className="space-y-2">
                             {scanResults.map((scan, idx) => (
@@ -565,7 +668,7 @@ export default function InfoDetails() {
                             className="border border-gray-300 rounded-lg p-3 bg-white dark:bg-gray-800"
                           >
                           
-                            <summary className="cursor-pointer font-semibold text-red-600 dark: text-red 400">
+                            <summary className="cursor-pointer font-semibold text-red-600 dark: text-red 600 dark:text-red-400">
                                 Problem detected: {scan.message}
                             </summary>
 
@@ -576,23 +679,39 @@ export default function InfoDetails() {
                             <li className="rounded-lg border border-gray-200 dark:border-slate-700 bg-gray-50 dark:bg-slate-700 p-4 shadow-sm">
                               <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 text-sm">
                                 <div>
-                                  <span className="font-semibold text-gray-600 dark:text-gray-300">ID:</span>{" "}
-                                  <span className="text-gray-800 dark:text-white">{action.id}</span>
+                                  <span className="font-semibold text-gray-600 dark:text-gray-300">
+                                    ID:
+                                  </span>{" "}
+                                  <span className="text-gray-800 dark:text-white">
+                                    {action.id}
+                                  </span>
                                 </div>
                                 <div>
-                                  <span className="font-semibold text-gray-600 dark:text-gray-300">Title:</span>{" "}
-                                  <span className="text-gray-800 dark:text-white">{action.title}</span>
+                                  <span className="font-semibold text-gray-600 dark:text-gray-300">
+                                    Title:
+                                  </span>{" "}
+                                  <span className="text-gray-800 dark:text-white">
+                                    {action.title}
+                                  </span>
                                 </div>
                                 <div className="sm:col-span-2">
-                                  <span className="font-semibold text-gray-600 dark:text-gray-300">Description:</span>{" "}
-                                  <span className="text-gray-800 dark:text-white">{action.description}</span>
+                                  <span className="font-semibold text-gray-600 dark:text-gray-300">
+                                    Description:
+                                  </span>{" "}
+                                  <span className="text-gray-800 dark:text-white">
+                                    {action.description}
+                                  </span>
                                 </div>
                                 <div>
-                                  <span className="font-semibold text-gray-600 dark:text-gray-300">Cleaner:</span>{" "}
+                                  <span className="font-semibold text-gray-600 dark:text-gray-300">
+                                    Cleaner:
+                                  </span>{" "}
                                   <span className="text-blue-500">{action.cleaner}</span>
                                 </div>
                                 <div className="flex justify-between items-center sm:justify-start sm:gap-3">
-                                  <span className="font-semibold text-gray-600 dark:text-gray-300">Activate:</span>
+                                  <span className="font-semibold text-gray-600 dark:text-gray-300">
+                                    Activate:
+                                  </span>
                                   <span
                                     onClick={() => toggleActivate(idx, actionIdx)}
                                     className={`px-3 py-1 rounded-full text-sm font-semibold transition-colors duration-200 cursor-pointer shadow-sm border ${
@@ -627,7 +746,7 @@ export default function InfoDetails() {
           </div>
         </div>
       </div>
-      {/* Progress bar popup (displayed only when showProgressModal=true) */}
+      {/* Progress bar popup*/}
         {showProgressModal && (
             <div className="fixed inset-0 flex items-center justify-center bg-black bg-opacity-50 backdrop-blur-sm z-50">
             <div className="bg-yellow-50 border border-black rounded-lg px-8 py-6 shadow-md flex flex-col items-center">
@@ -650,12 +769,9 @@ export default function InfoDetails() {
                     })}
                 </div>
                 <p className="text-sm mt-3 text-gray-600">
-                    {progressStatus === "completed" || progress >= 100
-                    ? "Completed"
-                    : "Processing..."}
+                {progressStatus === "completed" || progress >= 100 ? "Completed" : "Processing..."}
                 </p>
 
-               {/* Finish Button */}
                 <button
                     onClick={handleFinish}
                     disabled={progress < 100 && progressStatus !== "completed"}
@@ -665,7 +781,7 @@ export default function InfoDetails() {
                         : "bg-gray-400 cursor-not-allowed"
                     }`}
                 >
-                    Finish
+                    Completed
                 </button>
                 </div>
             </div>
