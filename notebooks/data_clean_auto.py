@@ -56,7 +56,7 @@ def clean_data(
     text_cleaning: bool = True
     extract_dates: bool = True
     remove_sparse: bool = True
-    remove_collinear: bool = True
+    # remove_collinear: bool = True
 
     # task_progress: TaskProgress = None
 
@@ -275,7 +275,7 @@ def clean_data(
     df = _remove_sparse_features(df, remove_sparse)
     #update_progress("Removed sparse features", 14.3)
     
-    df = _remove_collinear_features(df, remove_collinear)
+    # df = _remove_collinear_features(df, remove_collinear)
     #update_progress("Removed collinear features", 14.3)
 
     # if task_progress:
@@ -284,31 +284,31 @@ def clean_data(
     #     task_progress.percentage = 100.0
     #     task_progress.save()
     
-    # return df
+    return df
 
-generate_report: bool = False,
-output_path: str = "cleaning_report.html"
-def _generate_report(df: pd.DataFrame, generate_report: bool, output_path: str) -> None:
-    """Generate HTML cleaning report with correlation matrix"""
-    if not generate_report:
-        return
+# generate_report: bool = False,
+# output_path: str = "cleaning_report.html"
+# def _generate_report(df: pd.DataFrame, generate_report: bool, output_path: str) -> None:
+#     """Generate HTML cleaning report with correlation matrix"""
+#     if not generate_report:
+#         return
     
-    summary = pd.DataFrame({
-        'Data Type': df.dtypes,
-        'Missing Values': df.isnull().sum(),
-        'Unique Values': df.nunique()
-    })
+#     summary = pd.DataFrame({
+#         'Data Type': df.dtypes,
+#         'Missing Values': df.isnull().sum(),
+#         'Unique Values': df.nunique()
+#     })
     
-    numeric_df = df.select_dtypes(include=['number'])
-    plt.figure(figsize=(12, 8))
-    sns.heatmap(numeric_df.corr(), annot=True, cmap='coolwarm', fmt=".2f")
-    plt.savefig('correlation_plot.png')
+#     numeric_df = df.select_dtypes(include=['number'])
+#     plt.figure(figsize=(12, 8))
+#     sns.heatmap(numeric_df.corr(), annot=True, cmap='coolwarm', fmt=".2f")
+#     plt.savefig('correlation_plot.png')
     
-    with open(output_path, 'w') as f:
-        f.write("<h1>Data Cleaning Report</h1>")
-        f.write("<h2>Data Summary</h2>")
-        f.write(summary.to_html())
-        f.write("<h2>Correlation Matrix</h2>")
-        f.write(f"<img src='correlation_plot.png' width='800'/>")
+#     with open(output_path, 'w') as f:
+#         f.write("<h1>Data Cleaning Report</h1>")
+#         f.write("<h2>Data Summary</h2>")
+#         f.write(summary.to_html())
+#         f.write("<h2>Correlation Matrix</h2>")
+#         f.write(f"<img src='correlation_plot.png' width='800'/>")
     
-    logging.info(f"Report saved to: {output_path}")
+#     logging.info(f"Report saved to: {output_path}")
