@@ -23,7 +23,7 @@ from .serializers import (
     ImportScanResultSerializer, ImportScanResultActionSerializer,
     TaskProgressSerializer
 )
-from .tasks import read_file_to_import_data, copy_import_data_original, scan_import, clean_import
+from .tasks import read_file_to_import_data, copy_import_data_original, scan_import, clean_import, full_auto_clean_import
 from .models import TaskProgress, Import, ImportData, ImportScanResult, ImportScanResultAction
 from autoclean.utils import AutocleanAPIPagination, df_from_import_model
 
@@ -297,6 +297,104 @@ class ImportViewSet(viewsets.ReadOnlyModelViewSet):
 
         return Response(response_data, status=status.HTTP_201_CREATED)
     
+    @extend_schema(
+        methods=["POST"],
+        description="Fully automated cleaning for the specified import instance. (Ignores ScanResultActions)",
+        request=OpenApiTypes.OBJECT,
+        responses={
+            200: OpenApiResponse(
+                response=OpenApiTypes.OBJECT,
+                description="Cleaning process started successfully",
+                examples=[
+                    OpenApiExample(
+                        name="Successful Response",
+                        description="Returns a UUID indicating the cleaning task has started.",
+                        value={"task_progress_uuid": "3fa85f64-5717-4562-b3fc-2c963f66afa6"},
+                        response_only=True
+                    )
+                ]
+            ),
+            400: OpenApiResponse(
+                response=OpenApiTypes.OBJECT,
+                description="Invalid request data",
+                examples=[
+                    OpenApiExample(
+                        name="Missing id",
+                        description="Occurs when the 'id' field is not provided in the request body.",
+                        value={"error": "id is required."},
+                        response_only=True
+                    )
+                ]
+            ),
+            404: OpenApiResponse(
+                response=OpenApiTypes.OBJECT,
+                description="Import not found",
+                examples=[
+                    OpenApiExample(
+                        name="Import Not Found",
+                        description="Occurs when the specified 'id' does not exist in the database.",
+                        value={"error": "Import instance not found."},
+                        response_only=True
+                    )
+                ]
+            ),
+        },
+        examples=[
+            OpenApiExample(
+                name="Valid Request",
+                description="A valid request with an existing import ID.",
+                value={"id": 5},
+                request_only=True
+            )
+        ],
+    )
+    @action(detail=False, methods=["post"], url_path="clean-auto")
+    def clean_auto(self, request):
+        data = request.data
+
+        import_id = data.get("id")
+        if not import_id:
+            return Response({"error": "id is required."}, status=status.HTTP_400_BAD_REQUEST)
+        
+        try:
+            import_instance = Import.objects.get(id=import_id)
+        except Import.DoesNotExist:
+            return Response({"error": "Import instance not found."}, status=status.HTTP_404_NOT_FOUND)
+        
+        if import_instance.status != Import.Status.NEW:
+            return Response({"error": "Import has already been processed."}, status=status.HTTP_400_BAD_REQUEST)
+
+        task_progress = TaskProgress(
+            uuid=TaskProgress.makeUUID(),
+            status=TaskProgress.Status.PENDING.value,
+            message="Task created in queue. Pending for processing...",
+            error=None,
+            percentage=0.0,
+            user=request.user
+        )
+
+        task_progress.save()
+
+        task_chain = chain(
+            full_auto_clean_import.s({
+                "task_progress_id": task_progress.id,
+                "import_id": import_instance.id
+            })
+        )
+
+        task_chain.apply_async()
+
+        import_instance.status = Import.Status.PROCESSING.value
+        import_instance.save()
+
+        serializer = ImportSerializer(import_instance)
+        response_data = serializer.data
+        response_data.update({
+            "task_progress_uuid": task_progress.uuid
+        })
+
+        return Response(response_data, status=status.HTTP_201_CREATED)
+
     @action(detail=True, methods=['get'], url_path='export')
     def export(self, request, pk=None):
         try:

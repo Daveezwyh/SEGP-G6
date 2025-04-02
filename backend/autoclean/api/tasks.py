@@ -6,6 +6,7 @@ from .models import TaskProgress, Import, ImportData, ImportDataOriginal, Import
 from autoclean.utils import auto_read_csv_file_to_df, df_from_import_model, cleaner_fn_activate, save_import_data_from_df
 from autoclean.scanners.manager import ScannerManager
 from autoclean.scanners.result import ScanResult
+from autoclean.autocleaner.autocleaner import clean_data
 
 logger = logging.getLogger('django')
 
@@ -222,6 +223,51 @@ def clean_import(self, args):
                         else:
                             continue
             
+            save_import_data_from_df(import_instance, df)
+            
+            import_instance.status = Import.Status.COMPLETED.value
+            import_instance.save()
+
+            task_progress.status = TaskProgress.Status.COMPLETED.value
+            task_progress.percentage = 100
+            task_progress.message = "Cleaning process of import data completed."
+            task_progress.save()
+
+        except Exception as e:
+            task_progress.status = TaskProgress.Status.ERROR.value
+            task_progress.error = str(e)
+            task_progress.save()
+            raise
+
+    except Import.DoesNotExist:
+        logger.error(f"Import with ID {import_id} does not exist.", exc_info=True)
+        raise
+    except Exception as e:
+        logger.error(f"Error in task {self.name}: {str(e)}", exc_info=True)
+        raise
+
+@shared_task(bind=True)
+def full_auto_clean_import(self, args):
+    try:
+        task_progress_id = args["task_progress_id"]
+        import_id = args["import_id"]
+
+        import_instance = Import.objects.get(id=import_id)
+        task_progress = TaskProgress.objects.get(id=task_progress_id)
+
+        try:
+            import_instance.status = Import.Status.PROCESSING.value
+            import_instance.save()
+
+            task_progress.status = TaskProgress.Status.PROCESSING.value
+            task_progress.save()
+
+            df:pd.DataFrame = df_from_import_model(import_instance.id)
+
+            if df.empty:
+                raise ValueError("The DataFrame is empty and cannot be cleaned.")
+            
+            df = clean_data(df, task_progress)
             save_import_data_from_df(import_instance, df)
             
             import_instance.status = Import.Status.COMPLETED.value
