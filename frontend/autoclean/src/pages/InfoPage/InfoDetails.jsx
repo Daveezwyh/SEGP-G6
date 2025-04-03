@@ -495,10 +495,10 @@ export default function InfoDetails() {
                             {["Import Data", "Scan Results"].map((tab, index) => (
                                 <li
                                     key={index}
-                                    className={`p-3 px-3 cursor-pointer transition-all duration-300 ${
+                                    className={`p-3 px-3 cursor-pointer ${
                                         activeTab === index
-                                            ? "border-b-2 border-blue-500 text-black font-semibold bg-gray-100"
-                                            : "text-blue-500 hover:text-blue-700"
+                                            ? "border-b-2 border-blue-500 font-semibold bg-gray-100 dark:bg-gray-700"
+                                            : "text-blue-500 hover:text-blue-700 transition-all duration-300"
                                     }`}
                                     onClick={() => setActiveTab(index)}
                                 >
@@ -506,7 +506,7 @@ export default function InfoDetails() {
                                 </li>
                             ))}
                         </ul>
-                        <div className="p-6 bg-white rounded-lg shadow-md transition-opacity duration-300">
+                        <div className="p-6 rounded-lg shadow-md transition-opacity duration-300">
                             {/* --- Import Data Tab --- */}
                             {activeTab === 0 && (
                                 <div>
@@ -554,7 +554,7 @@ export default function InfoDetails() {
                                     </div>
 
                                     {/* File details content */}
-                                    <div className="bg-white dark:bg-gray-800 rounded-lg shadow p-4 text-black dark:text-gray-200">
+                                    <div className=" dark:bg-[#253445] rounded-lg shadow p-4 dark:text-cyan-400">
                                         {loading ? (
                                             <p>Loading...</p>
                                         ) : error ? (
@@ -573,7 +573,7 @@ export default function InfoDetails() {
                                                                 {headers.map((header) => (
                                                                     <th
                                                                         key={header}
-                                                                        className="px-4 py-2 bg-gray-400 dark:bg-gray-700 break-words text-left"
+                                                                        className="px-4 py-2 bg-gray-200 dark:bg-[#2F3C4B] break-words text-left"
                                                                     >
                                                                         {header}
                                                                     </th>
@@ -584,7 +584,7 @@ export default function InfoDetails() {
                                                             {details.results.map((record, rowIndex) => (
                                                                 <tr
                                                                     key={record.id}
-                                                                    className="border-b border-gray-150 hover:bg-gray-300 dark:hover:bg-gray-600"
+                                                                    className="border-b border-gray-300 dark:border-gray-600 bg-gray-100 dark:bg-[#253445] hover:bg-gray-300 dark:hover:bg-gray-600"
                                                                 >
                                                                     {headers.map((header, colIndex) => {
                                                                         const isHighlight =
@@ -699,8 +699,8 @@ export default function InfoDetails() {
                                                     onChange={() => setJumpEnabled(!jumpEnabled)}
                                                     className="peer sr-only"
                                                 />
-                                                <div className="w-11 h-6 bg-gray-300 rounded-full peer peer-checked:bg-blue-500 transition-colors"></div>
-                                                <div className="absolute left-0 top-0 w-6 h-6 bg-white border border-gray-300 rounded-full shadow-md transform transition-transform peer-checked:translate-x-5"></div>
+                                                <div className="w-11 h-6 bg-gray-200 border border-gray-400 rounded-full peer peer-checked:bg-blue-500 transition-colors"></div>
+                                                <div className="absolute left-0 top-0 w-6 h-6 border border-gray-400 bg-white rounded-full shadow-md transform transition-transform peer-checked:translate-x-5"></div>
                                             </div>
                                         </label>
                                     </div>
@@ -720,7 +720,7 @@ export default function InfoDetails() {
                                                             [idx]: e.target.open,
                                                         }));
                                                     }}
-                                                    className="border border-gray-300 rounded-lg p-3 bg-white dark:bg-gray-800"
+                                                    className=" rounded-lg p-3 bg-gray-200 dark:bg-[#253445]"
                                                 >
                                                     <summary className="cursor-pointer font-semibold text-red-600 dark:text-red-400">
                                                         Problem detected: {scan.message}
@@ -730,8 +730,8 @@ export default function InfoDetails() {
                                                         <div className="mt-2 text-gray-700 dark:text-cyan-400">
                                                             {scan.actions.map((action, actionIdx) => (
                                                                 <ul key={actionIdx} className="my-4 space-y-3">
-                                                                    <li className="rounded-lg border border-gray-200 dark:border-slate-700 bg-gray-50 dark:bg-slate-700 p-4 shadow-sm">
-                                                                        <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 text-sm">
+                                                                    <li className="rounded-lg dark:border-slate-700 bg-gray-50 dark:bg-slate-700 p-4 shadow-sm">
+                                                                        <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 text-sm ">
                                                                             <div>
                                                                                 <span className="font-semibold text-gray-600 dark:text-gray-300">
                                                                                     ID:
@@ -801,7 +801,7 @@ export default function InfoDetails() {
             </div>
             {/* Progress bar popup */}
             {showProgressModal && (
-                <div className="fixed inset-0 flex items-center justify-center bg-black bg-opacity-50 backdrop-blur-sm z-50">
+                <div className="fixed inset-0 flex items-center justify-center bg-opacity-50 backdrop-blur-sm z-50">
                     <div className="bg-yellow-50 border border-black rounded-lg px-8 py-6 shadow-md flex flex-col items-center">
                         <div className="bg-white rounded-lg px-6 py-4 w-[300px] flex flex-col items-center shadow-sm">
                             <div className="text-gray-700 font-medium mb-3 text-lg">
