@@ -138,7 +138,7 @@ export default function Information() {
            </ol>
          </nav>
  
-         {/* Filter area */}
+         {/* Filter area: gray-100 for light colors, #253445 for dark colors */}
          <div className="mb-6 p-6 bg-gray-100 dark:bg-[#253445] rounded-xl shadow-lg border border-transparent hover:border-blue-300 transition-all flex flex-col md:flex-row items-center gap-6">
            <div className="flex-1 w-full md:w-auto">
              <label className="block text-sm font-medium mb-2">
@@ -158,6 +158,7 @@ export default function Information() {
                    />
                  </svg>
                </span>
+               {/* The text is black in dark mode, you can change it to white if needed */}
                <input
                  type="text"
                  placeholder="Search file name..."
@@ -186,7 +187,7 @@ export default function Information() {
           </div>
           </div>
 
-          {/* Stats card */}
+          {/* Stats card: gray-100 for light colors, #253445 for dark colors */}
          <div className="mb-6 p-4 bg-gray-100 dark:bg-[#253445] rounded-xl shadow-lg flex items-center justify-between">
            <div>
              <p className="text-lg font-semibold">
@@ -217,10 +218,10 @@ export default function Information() {
            </button>
          </div>
 
-         {/* Data table area */}
+             {/* Data table area: gray-100 for light color, #253445 for dark color */}
          <div className="bg-gray-100 dark:bg-[#253445] rounded-xl shadow-lg">
-           {/* Header */}
-           <div className="grid grid-cols-7 items-center px-4 py-3 text-center font-semibold 
+           {/* Header: gray-200 for light color, #2F3C4B for dark color */}
+           <div className="grid grid-cols-6 items-center px-4 py-3 text-center font-semibold 
                            bg-gray-200 dark:bg-[#2F3C4B] rounded-t-xl">
              <span className="flex items-center justify-center space-x-1">
                <span>File Name</span>
@@ -230,13 +231,6 @@ export default function Information() {
              </span>
              <span className="flex items-center justify-center space-x-1">
                <span>ID</span>
-               <svg className="h-4 w-4 text-gray-400" fill="currentColor" viewBox="0 0 20 20">
-                 <path d="M7 7l3-3 3 3H7zM7 13l3 3 3-3H7z" />
-               </svg>
-             </span>
-             {/* Status */}
-             <span className="flex items-center justify-center space-x-1">
-               <span>Status</span>
                <svg className="h-4 w-4 text-gray-400" fill="currentColor" viewBox="0 0 20 20">
                  <path d="M7 7l3-3 3 3H7zM7 13l3 3 3-3H7z" />
                </svg>
@@ -267,112 +261,112 @@ export default function Information() {
              <div className="p-4 text-center">
                <div className="inline-block w-8 h-8 border-4 border-blue-500 rounded-full border-t-transparent animate-spin"></div>
             </div>
-          )}
-          {error && <p className="p-4 text-center text-red-500">Error: {error}</p>}
+            )}
+           {error && <p className="p-4 text-center text-red-500">Error: {error}</p>}
 
-          {/* Data list */}
-          {!loading && !error && data.length > 0 ? (
-            data
-              .filter((item) =>
-                searchByName
-                  ? item.data?.filename?.toLowerCase().includes(searchByName.toLowerCase())
-                  : true
-              )
-              .map((item) => (
-                <div
-                  key={item.id}
-                  className="grid grid-cols-7 items-center px-4 py-3 text-center 
-                             border-b last:border-0 border-gray-300 dark:border-gray-600 
-                             hover:bg-gray-50 dark:hover:bg-[#2F3C4B] transition-all transform hover:scale-[1.01]"
-                >
-                  <span className="truncate">
-                    {item.data?.filename || "N/A"}
-                  </span>
-                  <span>{item.id}</span>
-                  {/* Status */}
-                  <span>{item.status_text || "N/A"}</span>
-                  <span>{item.uploaded_by || "Unknown"}</span>
-                  <span>{item.data?.total_rows || 0}</span>
-                  <span>{new Date(item.uploaded_at).toLocaleString()}</span>
-                  <span>
-                    <button
-                      onClick={() => navigate(`/info/${item.id}`)}
-                      className="px-4 py-2 bg-blue-500 hover:bg-blue-600 text-white rounded transition-all transform hover:scale-105"
-                      title="View details"
-                    >
-                      View
-                    </button>
-                  </span>
-                </div>
-              ))
-          ) : (
-            !loading && <p className="p-4 text-center">No data available.</p>
-          )}
+            {/* Data list */}
+           {!loading && !error && data.length > 0 ? (
+             data
+               .filter((item) =>
+                 searchByName
+                   ? item.data?.filename?.toLowerCase().includes(searchByName.toLowerCase())
+                   : true
+               )
+               .map((item) => (
+                 <div
+                   key={item.id}
+                   className="grid grid-cols-7 items-center px-4 py-3 text-center 
+                              border-b last:border-0 border-gray-300 dark:border-gray-600 
+                              hover:bg-gray-50 dark:hover:bg-[#2F3C4B] transition-all transform hover:scale-[1.01]"
+                 >
+                   <span className="truncate">
+                     {item.data?.filename || "N/A"}
+                   </span>
+                   <span>{item.id}</span>
+                   <span>{item.status_text || "N/A"}</span>
+                   <span>{item.uploaded_by || "Unknown"}</span>
+                   <span>{item.data?.total_rows || 0}</span>
+                   <span>{new Date(item.uploaded_at).toLocaleString()}</span>
+                   <span>
+                     <button
+                       onClick={() => navigate(`/info/${item.id}`)}
+                       className="px-4 py-2 bg-blue-500 hover:bg-blue-600 text-white rounded transition-all transform hover:scale-105"
+                       title="View details"
+                     >
+                       View
+                     </button>
+                   </span>
+                 </div>
+               ))
+           ) : (
+             !loading && <p className="p-4 text-center">No data available.</p>
+           )}
+         
          </div>
- 
-         {/* Pagination component */}
-         <div className="mt-6 flex flex-col md:flex-row items-center justify-between gap-6">
-           <div className="flex items-center space-x-2">
-             <button
-               onClick={() => setPage((prev) => Math.max(prev - 1, 1))}
-               disabled={page === 1}
-               className="px-4 py-2 bg-gray-300 dark:bg-gray-600 text-gray-800 dark:text-gray-100 
-                          rounded disabled:opacity-50 hover:bg-gray-400 dark:hover:bg-gray-500 
-                          transition-all transform hover:scale-105"
-             >
-               {"<"}
-             </button>
-             {getPageNumbers().map((num, index) => (
+  
+          {/* Pagination component */}
+          <div className="mt-6 flex flex-col md:flex-row items-center justify-between gap-6">
+            <div className="flex items-center space-x-2">
               <button
-                key={index}
-                onClick={() => typeof num === "number" && setPage(num)}
-                disabled={num === "..."}
-                className={`px-3 py-1 rounded transition-all transform hover:scale-105 ${
-                  num === page
-                    ? "bg-blue-500 text-white"
-                    : "bg-gray-300 dark:bg-gray-600 text-gray-800 dark:text-gray-100 hover:bg-gray-400 dark:hover:bg-gray-500"
-                }`}
+                onClick={() => setPage((prev) => Math.max(prev - 1, 1))}
+                disabled={page === 1}
+                className="px-4 py-2 bg-gray-300 dark:bg-gray-600 text-gray-800 dark:text-gray-100 
+                           rounded disabled:opacity-50 hover:bg-gray-400 dark:hover:bg-gray-500 
+                           transition-all transform hover:scale-105"
+              >
+                {"<"}
+              </button>
+              {getPageNumbers().map((num, index) => (
+              <button
+              key={index}
+              onClick={() => typeof num === "number" && setPage(num)}
+              disabled={num === "..."}
+              className={`px-3 py-1 rounded transition-all transform hover:scale-105 ${
+                num === page
+                  ? "bg-blue-500 text-white"
+                  : "bg-gray-300 dark:bg-gray-600 text-gray-800 dark:text-gray-100 hover:bg-gray-400 dark:hover:bg-gray-500"
+              }`}
               >
                 {num}
               </button>
-             ))}
-             <button
-               onClick={() => setPage((prev) => Math.min(prev + 1, totalPages))}
-               disabled={page === totalPages || totalPages === 0}
-               className="px-4 py-2 bg-gray-300 dark:bg-gray-600 text-gray-800 dark:text-gray-100 
-                          rounded disabled:opacity-50 hover:bg-gray-400 dark:hover:bg-gray-500 
-                          transition-all transform hover:scale-105"
-             >
-               {">"}
-             </button>
-           </div>
-  
-           <div className="flex items-center space-x-2">
-             <span>Jump to Page:</span>
-             <input
-               type="number"
-               value={inputPage}
-               onChange={(e) => setInputPage(e.target.value)}
-               className="p-2 border border-gray-300 dark:border-gray-600 rounded w-24 
-                          bg-white dark:bg-gray-600 text-gray-900 dark:text-black
-                          focus:outline-none focus:border-blue-500 transition-colors"
-               min="1"
-               max={totalPages}
-               placeholder="Page #"
-             />
-             <button
-               onClick={() => {
-                 const newPage = parseInt(inputPage, 10);
-                 if (!isNaN(newPage) && newPage > 0 && newPage <= totalPages) {
-                   setPage(newPage);
-                 }
-               }}
-               className="px-4 py-2 bg-blue-500 hover:bg-blue-600 text-white rounded transition-all transform hover:scale-105"
-             >
-               Go
-             </button>
+              ))}
+              <button
+                onClick={() => setPage((prev) => Math.min(prev + 1, totalPages))}
+                disabled={page === totalPages || totalPages === 0}
+                className="px-4 py-2 bg-gray-300 dark:bg-gray-600 text-gray-800 dark:text-gray-100 
+                           rounded disabled:opacity-50 hover:bg-gray-400 dark:hover:bg-gray-500 
+                           transition-all transform hover:scale-105"
+              >
+                {">"}
+              </button>
+            </div>
+   
+            <div className="flex items-center space-x-2">
+              <span>Jump to Page:</span>
+              <input
+                type="number"
+                value={inputPage}
+                onChange={(e) => setInputPage(e.target.value)}
+                className="p-2 border border-gray-300 dark:border-gray-600 rounded w-24 
+                           bg-white dark:bg-gray-600 text-gray-900 dark:text-black
+                           focus:outline-none focus:border-blue-500 transition-colors"
+                min="1"
+                max={totalPages}
+                placeholder="Page #"
+              />
+              <button
+                onClick={() => {
+                  const newPage = parseInt(inputPage, 10);
+                  if (!isNaN(newPage) && newPage > 0 && newPage <= totalPages) {
+                    setPage(newPage);
+                  }
+                }}
+                className="px-4 py-2 bg-blue-500 hover:bg-blue-600 text-white rounded transition-all transform hover:scale-105"
+              >
+                Go
+              </button>
           </div>
-         </div>
+        </div>
       </div>
     </div>
   );
