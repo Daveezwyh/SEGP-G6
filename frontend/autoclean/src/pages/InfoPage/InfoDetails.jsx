@@ -536,7 +536,7 @@ export default function InfoDetails() {
                                                 onClick={handleFullyAutomatedCleaning}
                                                 className="px-4 py-2 bg-purple-500 hover:bg-purple-600 text-white rounded"
                                             >
-                                                Fully Automated Cleaning
+                                                Automatic Cleaning
                                             </button>
                                             <button
                                                 onClick={handleClean}
