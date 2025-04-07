@@ -220,14 +220,17 @@ def clean_data(
         
         if binary_cols:
             selector = VarianceThreshold(threshold=0.05*(1-0.05))
-            binary_data = selector.fit_transform(df[binary_cols])
-            selected_cols = np.array(binary_cols)[selector.get_support()].tolist()
-            non_binary_cols = df.columns.difference(binary_cols).tolist()
-            df = pd.concat([
-                df[non_binary_cols],
-                pd.DataFrame(binary_data, columns=selected_cols)
-            ], axis=1)
-        
+            try:
+                binary_data = selector.fit_transform(df[binary_cols])
+                selected_cols = np.array(binary_cols)[selector.get_support()].tolist()
+                non_binary_cols = df.columns.difference(binary_cols).tolist()
+                df = pd.concat([
+                    df[non_binary_cols],
+                    pd.DataFrame(binary_data, columns=selected_cols)
+                ], axis=1)
+            except ValueError:
+                print("[Warning]")
+                return df
         return df
 
     def _remove_collinear_features(df: pd.DataFrame, remove_collinear: bool) -> pd.DataFrame:
@@ -255,34 +258,20 @@ def clean_data(
         return df[all_cols]
 
     df = _remove_duplicates(df)
-    #update_progress("Removed duplicates", 14.3)
     
     df = _handle_missing_values(df)
-    #update_progress("Handled missing values", 14.3)
     
     df = _detect_outliers(df, contamination)
-    #update_progress("Detected and removed outliers", 14.3)
     
     df = _process_dates(df, handle_dates, extract_dates)
-    #update_progress("Processed dates", 14.3)
     
     df = _clean_text(df, text_cleaning)
-    #update_progress("Cleaned text", 14.3)
     
     df = _encode_categoricals(df, max_unique_count, numeric_threshold, max_onehot_features)
-    #update_progress("Encoded categorical features", 14.3)
     
     df = _remove_sparse_features(df, remove_sparse)
-    #update_progress("Removed sparse features", 14.3)
     
     # df = _remove_collinear_features(df, remove_collinear)
-    #update_progress("Removed collinear features", 14.3)
-
-    # if task_progress:
-    #     task_progress.status = TaskProgress.Status.COMPLETED.value
-    #     task_progress.message = "Data cleaning completed"
-    #     task_progress.percentage = 100.0
-    #     task_progress.save()
     
     return df
 
