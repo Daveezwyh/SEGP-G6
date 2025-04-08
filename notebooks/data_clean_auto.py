@@ -5,7 +5,6 @@ from sklearn.ensemble import IsolationForest
 from sklearn.experimental import enable_iterative_imputer
 from sklearn.impute import IterativeImputer
 from sklearn.feature_selection import VarianceThreshold
-import matplotlib.pyplot as plt
 import seaborn as sns
 from statsmodels.stats.outliers_influence import variance_inflation_factor
 #from backend.autoclean.api.models import TaskProgress
@@ -22,7 +21,7 @@ def clean_data(
         Raw input data to be processed
     numeric_threshold : float (default=0.1)
         Threshold ratio for high-cardinality numeric column detection
-    max_unique_count : int (default=100)
+    max_unique_count : int (default=1000)
         Maximum allowed unique values for categorical columns
     contamination : float (default=0.05)
         Outlier fraction assumption for Isolation Forest
@@ -48,23 +47,14 @@ def clean_data(
     pd.DataFrame
         Processed and cleaned data
     """
-    numeric_threshold: float = 0.1
-    max_unique_count: int = 100
+    numeric_threshold: float = 0.99
     contamination: float = 0.05
-    max_onehot_features: int = 15
+    max_onehot_features: int = 20
     handle_dates: bool = True
     text_cleaning: bool = True
     extract_dates: bool = True
     remove_sparse: bool = True
     # remove_collinear: bool = True
-
-    # task_progress: TaskProgress = None
-
-    # def update_progress(step_message: str, progress_increment: float):
-    #     if task_progress:
-    #         task_progress.percentage += progress_increment
-    #         task_progress.message = step_message
-    #         task_progress.save()
 
     df = df.copy()
 
@@ -177,35 +167,25 @@ def clean_data(
             )
         return df
 
-    def _encode_categoricals(
-        df: pd.DataFrame, 
-        max_unique_count: int,
-        numeric_threshold: float,
-        max_onehot_features: int
-    ) -> pd.DataFrame:
+    def _encode_categoricals(df: pd.DataFrame, numeric_threshold: float, max_onehot_features: int) -> pd.DataFrame:
         """Encode categorical variables with frequency or One-Hot encoding"""
-        # Select non-numeric columns
         cat_cols = df.select_dtypes(include=['object', 'category', 'bool']).columns
         
         for col in cat_cols:
             unique_count = df[col].nunique()
             total_rows = len(df)
+            unique_ratio = unique_count / total_rows
             
-            # Drop high cardinality columns
-            if unique_count > max_unique_count or unique_count / total_rows > 0.5:
+            if unique_ratio > numeric_threshold:
                 df.drop(columns=[col], inplace=True)
                 continue
             
-            # Encoding strategy
             if unique_count <= max_onehot_features:
-                # One-Hot Encoding
                 df = pd.get_dummies(df, columns=[col], drop_first=True, dtype=int)
-            elif max_onehot_features <= unique_count <= numeric_threshold:
-                # Frequency Encoding
+            else:
                 freq = (df[col].value_counts() / total_rows).to_dict()
                 df[f"{col}_freq"] = df[col].map(freq).astype(np.float32)
                 df.drop(columns=[col], inplace=True)
-        
         return df
 
     def _remove_sparse_features(df: pd.DataFrame, remove_sparse: bool) -> pd.DataFrame:
@@ -257,47 +237,39 @@ def clean_data(
         
         return df[all_cols]
 
-    df = _remove_duplicates(df)
-    
-    df = _handle_missing_values(df)
-    
-    df = _detect_outliers(df, contamination)
-    
-    df = _process_dates(df, handle_dates, extract_dates)
-    
-    df = _clean_text(df, text_cleaning)
-    
-    df = _encode_categoricals(df, max_unique_count, numeric_threshold, max_onehot_features)
-    
-    df = _remove_sparse_features(df, remove_sparse)
-    
-    # df = _remove_collinear_features(df, remove_collinear)
-    
-    return df
+    try:
+        df = _remove_duplicates(df)
+    except:
+        pass
 
-# generate_report: bool = False,
-# output_path: str = "cleaning_report.html"
-# def _generate_report(df: pd.DataFrame, generate_report: bool, output_path: str) -> None:
-#     """Generate HTML cleaning report with correlation matrix"""
-#     if not generate_report:
-#         return
-    
-#     summary = pd.DataFrame({
-#         'Data Type': df.dtypes,
-#         'Missing Values': df.isnull().sum(),
-#         'Unique Values': df.nunique()
-#     })
-    
-#     numeric_df = df.select_dtypes(include=['number'])
-#     plt.figure(figsize=(12, 8))
-#     sns.heatmap(numeric_df.corr(), annot=True, cmap='coolwarm', fmt=".2f")
-#     plt.savefig('correlation_plot.png')
-    
-#     with open(output_path, 'w') as f:
-#         f.write("<h1>Data Cleaning Report</h1>")
-#         f.write("<h2>Data Summary</h2>")
-#         f.write(summary.to_html())
-#         f.write("<h2>Correlation Matrix</h2>")
-#         f.write(f"<img src='correlation_plot.png' width='800'/>")
-    
-#     logging.info(f"Report saved to: {output_path}")
+    try:
+        df = _handle_missing_values(df)
+    except:
+        pass
+
+    try:
+        df = _detect_outliers(df, contamination)
+    except:
+        pass
+
+    try:
+        df = _process_dates(df, handle_dates, extract_dates)
+    except:
+        pass
+
+    try:
+        df = _clean_text(df, text_cleaning)
+    except:
+        pass
+
+    try:
+        df = _encode_categoricals(df, numeric_threshold, max_onehot_features)
+    except:
+        pass
+
+    try:
+        df = _remove_sparse_features(df, remove_sparse)
+    except:
+        pass
+
+    return df

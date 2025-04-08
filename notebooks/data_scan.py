@@ -5,8 +5,11 @@ from ScanResult import *
 
 def scan_df_for_duplicates(df: pd.DataFrame) -> List[ScanResult]:
     scan_results = []
-    df = df.dropna(axis=1, how='all')
-    duplicated_rows = df[df.duplicated(keep="first")]
+    try:
+        df = df.dropna(axis=1, how='all')
+        duplicated_rows = df[df.duplicated(keep="first")]
+    except Exception:
+        return scan_results
     
     for index in duplicated_rows.index:
         actions = [
@@ -32,100 +35,106 @@ def scan_df_for_duplicates(df: pd.DataFrame) -> List[ScanResult]:
     return scan_results
 
 def scan_df_for_missing(df: pd.DataFrame) -> List[ScanResult]:
-    missing_matrix = df.isna()
     scan_results = []
+    try:
+        missing_matrix = df.isna()
+    except Exception:
+        return scan_results
     
     for row_idx, col_idx in zip(*np.where(missing_matrix)):
-        col_name = df.columns[col_idx]
+        try:
+            col_name = df.columns[col_idx]
         
-        # Check if the column is numeric
-        if pd.api.types.is_numeric_dtype(df[col_name]):
-            actions = [
-                ScanResultAction(
-                    title="Missing Value Filler",
-                    description="Fill with mean value",
-                    cleaner="fill_with_mean",
-                    cleaner_id=None,
-                    activate=True
-                ),
-                ScanResultAction(
-                    title="Missing Value Filler",
-                    description="Fill with median value",
-                    cleaner="fill_with_median",
-                    cleaner_id=None,
-                    activate=False
-                ),
-                ScanResultAction(
-                    title="Missing Value Filler",
-                    description="Fill with most frequent value",
-                    cleaner="fill_with_mode",
-                    cleaner_id=None,
-                    activate=False
-                ),
-                ScanResultAction(
-                    title="Missing Value Filler",
-                    description="Fill with previous value",
-                    cleaner="fill_with_ffill",
-                    cleaner_id=None,
-                    activate=False
-                ),
-                ScanResultAction(
-                    title="Missing Value Filler",
-                    description="Fill with next value",
-                    cleaner="fill_with_bfill",
-                    cleaner_id=None,
-                    activate=False
-                ),
-                ScanResultAction(
-                    title="Missing Value Filler",
-                    description="Delete the row",
-                    cleaner="delete_missing_rows",
-                    cleaner_id=None,
-                    activate=False
-                )
-            ]
-        else:
-            # For non-numeric columns, offer only mode, ffill, bfill, and delete
-            actions = [
-                ScanResultAction(
-                    title="Missing Value Filler",
-                    description="Fill with most frequent value",
-                    cleaner="fill_with_mode",
-                    cleaner_id=None,
-                    activate=True
-                ),
-                ScanResultAction(
-                    title="Missing Value Filler",
-                    description="Fill with previous value",
-                    cleaner="fill_with_ffill",
-                    cleaner_id=None,
-                    activate=False
-                ),
-                ScanResultAction(
-                    title="Missing Value Filler",
-                    description="Fill with next value",
-                    cleaner="fill_with_bfill",
-                    cleaner_id=None,
-                    activate=False
-                ),
-                ScanResultAction(
-                    title="Missing Value Filler",
-                    description="Delete the row",
-                    cleaner="delete_missing_rows",
-                    cleaner_id=None,
-                    activate=False
-                )
-            ]
+            # Check if the column is numeric
+            if pd.api.types.is_numeric_dtype(df[col_name]):
+                actions = [
+                    ScanResultAction(
+                        title="Missing Value Filler",
+                        description="Fill with mean value",
+                        cleaner="fill_with_mean",
+                        cleaner_id=None,
+                        activate=True
+                    ),
+                    ScanResultAction(
+                        title="Missing Value Filler",
+                        description="Fill with median value",
+                        cleaner="fill_with_median",
+                        cleaner_id=None,
+                        activate=False
+                    ),
+                    ScanResultAction(
+                        title="Missing Value Filler",
+                        description="Fill with most frequent value",
+                        cleaner="fill_with_mode",
+                        cleaner_id=None,
+                        activate=False
+                    ),
+                    ScanResultAction(
+                        title="Missing Value Filler",
+                        description="Fill with previous value",
+                        cleaner="fill_with_ffill",
+                        cleaner_id=None,
+                        activate=False
+                    ),
+                    ScanResultAction(
+                        title="Missing Value Filler",
+                        description="Fill with next value",
+                        cleaner="fill_with_bfill",
+                        cleaner_id=None,
+                        activate=False
+                    ),
+                    ScanResultAction(
+                        title="Missing Value Filler",
+                        description="Delete the row",
+                        cleaner="delete_missing_rows",
+                        cleaner_id=None,
+                        activate=False
+                    )
+                ]
+            else:
+                # For non-numeric columns, offer only mode, ffill, bfill, and delete
+                actions = [
+                    ScanResultAction(
+                        title="Missing Value Filler",
+                        description="Fill with most frequent value",
+                        cleaner="fill_with_mode",
+                        cleaner_id=None,
+                        activate=True
+                    ),
+                    ScanResultAction(
+                        title="Missing Value Filler",
+                        description="Fill with previous value",
+                        cleaner="fill_with_ffill",
+                        cleaner_id=None,
+                        activate=False
+                    ),
+                    ScanResultAction(
+                        title="Missing Value Filler",
+                        description="Fill with next value",
+                        cleaner="fill_with_bfill",
+                        cleaner_id=None,
+                        activate=False
+                    ),
+                    ScanResultAction(
+                        title="Missing Value Filler",
+                        description="Delete the row",
+                        cleaner="delete_missing_rows",
+                        cleaner_id=None,
+                        activate=False
+                    )
+                ]
         
-        scan_results.append(
-            ScanResult(
-                row=row_idx,
-                col=col_idx,
-                message=f"Missing value in row {row_idx+1}, column '{col_name}'",
-                action_type=SRActionType.ONE_MANDATORY,
-                actions=actions
+            scan_results.append(
+                ScanResult(
+                    row=row_idx,
+                    col=col_idx,
+                    message=f"Missing value in row {row_idx+1}, column '{col_name}'",
+                    action_type=SRActionType.ONE_MANDATORY,
+                    actions=actions
+                )
             )
-        )
+        except:
+            continue
     
     return scan_results
 
@@ -133,48 +142,52 @@ def scan_df_for_missing(df: pd.DataFrame) -> List[ScanResult]:
 def scan_df_for_outliers(df: pd.DataFrame) -> List[ScanResult]:
     scan_results = []
     
-    for col in df.select_dtypes(include=[np.number]):
-        col_data = df[col].dropna()
-        if col_data.empty:
-            continue
+    try:
+        for col in df.select_dtypes(include=[np.number]):
+            col_data = df[col].dropna()
+            if col_data.empty:
+                continue
 
-        q1, q3 = col_data.quantile([0.25, 0.75])
-        iqr = q3 - q1
-        lower_bound = q1 - 1.5 * iqr
-        upper_bound = q3 + 1.5 * iqr
-        
-        outliers = (col_data < lower_bound) | (col_data > upper_bound)
-        
-        for idx in col_data[outliers].index:
-            col_idx = df.columns.get_loc(col)
-            actions = [
-                ScanResultAction(
-                    title="Outlier Handler",
-                    description="Delete the outlier",
-                    cleaner="clean_df_for_outlier",
-                    cleaner_id=None,
-                    activate=True
-                )
-            ]
+            q1, q3 = col_data.quantile([0.25, 0.75])
+            iqr = q3 - q1
+            lower_bound = q1 - 1.5 * iqr
+            upper_bound = q3 + 1.5 * iqr
             
-            scan_results.append(
-                ScanResult(
-                    row=idx,
-                    col=col_idx,
-                    message=f"Outlier detected in column '{col}' at row {idx+1}",
-                    action_type=SRActionType.ONE_MANDATORY,
-                    actions=actions
+            outliers = (col_data < lower_bound) | (col_data > upper_bound)
+            
+            for idx in col_data[outliers].index:
+                col_idx = df.columns.get_loc(col)
+                actions = [
+                    ScanResultAction(
+                        title="Outlier Handler",
+                        description="Delete the outlier",
+                        cleaner="clean_df_for_outlier",
+                        cleaner_id=None,
+                        activate=True
+                    )
+                ]
+                
+                scan_results.append(
+                    ScanResult(
+                        row=idx,
+                        col=col_idx,
+                        message=f"Outlier detected in column '{col}' at row {idx+1}",
+                        action_type=SRActionType.ONE_MANDATORY,
+                        actions=actions
+                    )
                 )
-            )
+    except:
+        pass
     
     return scan_results
 
 def scan_df_for_categorical(df: pd.DataFrame) -> List[ScanResult]:
     scan_results = []
-    # max_categories = int(len(df) * 0.1)
-    categorical_dtypes: list = ['object', 'category', 'bool']
-    
-    non_numeric_cols = df.select_dtypes(include=categorical_dtypes)
+    try:
+        categorical_dtypes = ['object', 'category', 'bool']
+        non_numeric_cols = df.select_dtypes(include=categorical_dtypes)
+    except Exception:
+        return scan_results
 
     for col in non_numeric_cols.columns:
         if df[col].dropna().size == 0:
@@ -227,41 +240,44 @@ def scan_df_for_categorical(df: pd.DataFrame) -> List[ScanResult]:
 
 def scan_df_for_target(df: pd.DataFrame, target) -> List[ScanResult]:
     scan_results = []
-    matches = df.isin([target])
-    
-    for row_idx, col_idx in zip(*np.where(matches)):
-        col_name = df.columns[col_idx]
+    try:
+        matches = df.isin([target])
         
-        actions = [
-            ScanResultAction(
-                title=f"Handle '{target}' value",
-                description=f"Handle the '{target}' value in column '{col_name}'",
-                cleaner="handle_target",
-                activate=True,
-            ),
-            ScanResultAction(
-                title="Delete row",
-                description=f"Delete row {row_idx+1} because it contains '{target}'",
-                cleaner="delete_target_row",
-                activate=True,
-            ),
-            ScanResultAction(
-                title="Delete column",
-                description=f"Delete column '{col_name}' because it contains '{target}'",
-                cleaner="delete_target_column",
-                activate=True,
+        for row_idx, col_idx in zip(*np.where(matches)):
+            col_name = df.columns[col_idx]
+            
+            actions = [
+                ScanResultAction(
+                    title=f"Handle '{target}' value",
+                    description=f"Handle the '{target}' value in column '{col_name}'",
+                    cleaner="handle_target",
+                    activate=True,
+                ),
+                ScanResultAction(
+                    title="Delete row",
+                    description=f"Delete row {row_idx+1} because it contains '{target}'",
+                    cleaner="delete_target_row",
+                    activate=True,
+                ),
+                ScanResultAction(
+                    title="Delete column",
+                    description=f"Delete column '{col_name}' because it contains '{target}'",
+                    cleaner="delete_target_column",
+                    activate=True,
+                )
+            ]
+            
+            scan_results.append(
+                ScanResult(
+                    row=row_idx,
+                    col=col_name,
+                    message=f"Target value '{target}' found in row {row_idx+1}, column '{col_name}'",
+                    action_type=SRActionType.MANY_OPTIONAL,
+                    actions=actions
+                )
             )
-        ]
-        
-        scan_results.append(
-            ScanResult(
-                row=row_idx,
-                col=col_name,
-                message=f"Target value '{target}' found in row {row_idx+1}, column '{col_name}'",
-                action_type=SRActionType.MANY_OPTIONAL,
-                actions=actions
-            )
-        )
+    except Exception:
+        pass
     
     return scan_results
 
