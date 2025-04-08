@@ -6,6 +6,11 @@ import { getToken } from "../../utils";
 
 import Header from "../Homepage/Header";
 
+const parseColumnName = (message) => {
+    const match = message.match(/column '(.+?)'/);
+    return match ? match[1] : null;
+};
+
 export default function InfoDetails() {
     const { id } = useParams();
     const navigate = useNavigate();
@@ -22,13 +27,9 @@ export default function InfoDetails() {
     const [scanResults, setScanResult] = useState([]);
     const [loadingScan, setLoadingScan] = useState(false);
     const [errorScan, setErrorScan] = useState(null);
-    // jumpEnabled controls whether jump-on-activation is enabled
     const [jumpEnabled, setJumpEnabled] = useState(false);
-    // highlightCell stores the cell to be highlighted { row, col } (relative to current page)
     const [highlightCell, setHighlightCell] = useState(null);
-    // pendingHighlight stores the global row/col info for the cell that should be highlighted after page change
     const [pendingHighlight, setPendingHighlight] = useState(null);
-
     const [showProgressModal, setShowProgressModal] = useState(false);
     const [progressUuid, setProgressUuid] = useState("");
     const [progress, setProgress] = useState(0);
@@ -48,6 +49,19 @@ export default function InfoDetails() {
             fetchScanResults();
         }
     }, [activeTab]);
+
+    useEffect(() => {
+        if (pendingHighlight && details && details.results && details.results.length > 0) {
+            const rowInPage = pendingHighlight.row % pageSize;
+            if (rowInPage < details.results.length) {
+                setHighlightCell({ row: rowInPage, col: pendingHighlight.col });
+                setTimeout(() => {
+                    setHighlightCell(null);
+                    setPendingHighlight(null);
+                }, 1500);
+            }
+        }
+    }, [details, pendingHighlight, pageSize]);
 
     useEffect(() => {
         return () => {
@@ -101,19 +115,6 @@ export default function InfoDetails() {
                 setHeaders(Object.keys(data.results[0].data));
             }
 
-            if (pendingHighlight) {
-                // Calculate the row index on this page (global row % pageSize)
-                const rowInPage = pendingHighlight.row % pageSize;
-                if (data.results && rowInPage < data.results.length) {
-                    setHighlightCell({ row: rowInPage, col: pendingHighlight.col });
-                    // Clear the highlight after 1 second
-                    setTimeout(() => {
-                        setHighlightCell(null);
-                    }, 1000);
-                }
-                // Clear pending highlight
-                setPendingHighlight(null);
-            }
         } catch (err) {
             setError(err.message);
         } finally {
@@ -382,38 +383,11 @@ export default function InfoDetails() {
 
     const TOTAL_SEGMENTS = 10;
     const segmentsActive = Math.round((progress / 100) * TOTAL_SEGMENTS);
-
-    /**
-     * flashCell:
-     * 1. Switch to "Import Data" tab.
-     * 2. After a short delay, set highlightCell to flash the target cell.
-     */
-    const flashCell = (rowIndex, colIndex) => {
-        // Switch to "Import Data" tab
-        setActiveTab(0);
-        // Wait for the panel to switch
-        setTimeout(() => {
-            setHighlightCell({ row: rowIndex, col: colIndex });
-            // Clear highlight after 1 second
-            setTimeout(() => {
-                setHighlightCell(null);
-            }, 1000);
-        }, 300);
-    };
-
-    /**
-     * toggleActivate:
-     * 1. Optimistically update the local state.
-     * 2. Send the PATCH request.
-     * 3. If successful and jumpEnabled is true, calculate target page based on global row,
-     *    set pendingHighlight, and switch to the correct page.
-     */
     const toggleActivate = async (scanIdx, actionIdx) => {
         const scanItem = scanResults[scanIdx];
         const action = scanItem.actions[actionIdx];
         const newActivate = !action.activate;
 
-        // 1. Update local state optimistically
         setScanResult((prev) => {
             const updated = [...prev];
             updated[scanIdx] = {
@@ -427,7 +401,6 @@ export default function InfoDetails() {
             return updated;
         });
 
-        // 2. Send PATCH request to backend
         try {
             const response = await fetch("http://35.213.150.144:8000/api/import-scanresult-action/update/", {
                 method: "PATCH",
@@ -446,23 +419,30 @@ export default function InfoDetails() {
                 throw new Error(`Failed to update toggle: ${response.status}`);
             }
 
-            // 3. If activation is successful and jump is enabled, calculate the target page.
             if (newActivate && jumpEnabled) {
-                // Calculate target page (global row is 0-indexed)
-                const targetPage = Math.floor(scanItem.row / pageSize) + 1;
-                setPendingHighlight({ row: scanItem.row, col: scanItem.col });
+                let highlightCol = scanItem.col;
+                const colName = parseColumnName(scanItem.message);
+                if (colName && headers && headers.length > 0) {
+                    const indexInHeaders = headers.indexOf(colName);
+                    if (indexInHeaders !== -1) {
+                        highlightCol = indexInHeaders;
+                    }
+                }
+                setPendingHighlight({ row: scanItem.row, col: highlightCol });
 
-                // If targetPage is different from the current page, update the page state.
+                const targetPage = Math.floor(scanItem.row / pageSize) + 1;
+
                 if (targetPage !== page) {
                     setPage(targetPage);
+                    setTimeout(() => {
+                        fetchDetails();
+                    }, 800);
                 } else {
-                    // If already on the target page, force a data refresh to process pendingHighlight
                     fetchDetails();
                 }
                 setActiveTab(0);
             }
         } catch (err) {
-            // Rollback the local state if request fails
             Swal.fire("Error", err.message, "error");
             setScanResult((prev) => {
                 const updated = [...prev];
@@ -472,7 +452,7 @@ export default function InfoDetails() {
                 };
                 updated[scanIdx].actions[actionIdx] = {
                     ...action,
-                    activate: action.activate, // revert back
+                    activate: action.activate,
                 };
                 return updated;
             });
@@ -495,10 +475,10 @@ export default function InfoDetails() {
                             {["Import Data", "Scan Results"].map((tab, index) => (
                                 <li
                                     key={index}
-                                    className={`p-3 px-3 cursor-pointer transition-all duration-300 ${
+                                    className={`p-3 px-3 cursor-pointer ${
                                         activeTab === index
-                                            ? "border-b-2 border-blue-500 text-black font-semibold bg-gray-100"
-                                            : "text-blue-500 hover:text-blue-700"
+                                            ? "border-b-2 border-blue-500 font-semibold bg-gray-100 dark:bg-gray-700"
+                                            : "text-blue-500 hover:text-blue-700 transition-all duration-300"
                                     }`}
                                     onClick={() => setActiveTab(index)}
                                 >
@@ -506,7 +486,7 @@ export default function InfoDetails() {
                                 </li>
                             ))}
                         </ul>
-                        <div className="p-6 bg-white rounded-lg shadow-md transition-opacity duration-300">
+                        <div className="p-6 rounded-lg shadow-md transition-opacity duration-300">
                             {/* --- Import Data Tab --- */}
                             {activeTab === 0 && (
                                 <div>
@@ -554,7 +534,7 @@ export default function InfoDetails() {
                                     </div>
 
                                     {/* File details content */}
-                                    <div className="bg-white dark:bg-gray-800 rounded-lg shadow p-4 text-black dark:text-gray-200">
+                                    <div className=" dark:bg-[#253445] rounded-lg shadow p-4 dark:text-cyan-400">
                                         {loading ? (
                                             <p>Loading...</p>
                                         ) : error ? (
@@ -573,7 +553,7 @@ export default function InfoDetails() {
                                                                 {headers.map((header) => (
                                                                     <th
                                                                         key={header}
-                                                                        className="px-4 py-2 bg-gray-400 dark:bg-gray-700 break-words text-left"
+                                                                        className="px-4 py-2 bg-gray-200 dark:bg-[#2F3C4B] break-words text-left"
                                                                     >
                                                                         {header}
                                                                     </th>
@@ -584,7 +564,7 @@ export default function InfoDetails() {
                                                             {details.results.map((record, rowIndex) => (
                                                                 <tr
                                                                     key={record.id}
-                                                                    className="border-b border-gray-150 hover:bg-gray-300 dark:hover:bg-gray-600"
+                                                                    className="border-b border-gray-300 dark:border-gray-600 bg-gray-100 dark:bg-[#253445] hover:bg-gray-300 dark:hover:bg-gray-600"
                                                                 >
                                                                     {headers.map((header, colIndex) => {
                                                                         const isHighlight =
@@ -595,7 +575,7 @@ export default function InfoDetails() {
                                                                             <td
                                                                                 key={header}
                                                                                 className={`px-4 py-2 break-words text-left max-w-[400px] ${
-                                                                                    isHighlight ? "bg-yellow-200 animate-pulse" : ""
+                                                                                    isHighlight ? "bg-yellow-200 border-2 border-red-500 animate-pulse" : ""
                                                                                 }`}
                                                                             >
                                                                                 {record.data[header] ?? "-"}
@@ -699,8 +679,8 @@ export default function InfoDetails() {
                                                     onChange={() => setJumpEnabled(!jumpEnabled)}
                                                     className="peer sr-only"
                                                 />
-                                                <div className="w-11 h-6 bg-gray-300 rounded-full peer peer-checked:bg-blue-500 transition-colors"></div>
-                                                <div className="absolute left-0 top-0 w-6 h-6 bg-white border border-gray-300 rounded-full shadow-md transform transition-transform peer-checked:translate-x-5"></div>
+                                                <div className="w-11 h-6 bg-gray-200 border border-gray-400 rounded-full peer peer-checked:bg-blue-500 transition-colors"></div>
+                                                <div className="absolute left-0 top-0 w-6 h-6 border border-gray-400 bg-white rounded-full shadow-md transform transition-transform peer-checked:translate-x-5"></div>
                                             </div>
                                         </label>
                                     </div>
@@ -720,7 +700,7 @@ export default function InfoDetails() {
                                                             [idx]: e.target.open,
                                                         }));
                                                     }}
-                                                    className="border border-gray-300 rounded-lg p-3 bg-white dark:bg-gray-800"
+                                                    className=" rounded-lg p-3 bg-gray-200 dark:bg-[#253445]"
                                                 >
                                                     <summary className="cursor-pointer font-semibold text-red-600 dark:text-red-400">
                                                         Problem detected: {scan.message}
@@ -730,8 +710,8 @@ export default function InfoDetails() {
                                                         <div className="mt-2 text-gray-700 dark:text-cyan-400">
                                                             {scan.actions.map((action, actionIdx) => (
                                                                 <ul key={actionIdx} className="my-4 space-y-3">
-                                                                    <li className="rounded-lg border border-gray-200 dark:border-slate-700 bg-gray-50 dark:bg-slate-700 p-4 shadow-sm">
-                                                                        <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 text-sm">
+                                                                    <li className="rounded-lg dark:border-slate-700 bg-gray-50 dark:bg-slate-700 p-4 shadow-sm">
+                                                                    <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 text-sm ">
                                                                             <div>
                                                                                 <span className="font-semibold text-gray-600 dark:text-gray-300">
                                                                                     ID:
@@ -801,7 +781,7 @@ export default function InfoDetails() {
             </div>
             {/* Progress bar popup */}
             {showProgressModal && (
-                <div className="fixed inset-0 flex items-center justify-center bg-black bg-opacity-50 backdrop-blur-sm z-50">
+                <div className="fixed inset-0 flex items-center justify-center bg-opacity-50 backdrop-blur-sm z-50">
                     <div className="bg-yellow-50 border border-black rounded-lg px-8 py-6 shadow-md flex flex-col items-center">
                         <div className="bg-white rounded-lg px-6 py-4 w-[300px] flex flex-col items-center shadow-sm">
                             <div className="text-gray-700 font-medium mb-3 text-lg">
