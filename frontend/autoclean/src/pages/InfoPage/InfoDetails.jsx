@@ -6,6 +6,11 @@ import { getToken } from "../../utils";
 
 import Header from "../Homepage/Header";
 
+const parseColumnName = (message) => {
+  const match = message.match(/column '(.+?)'/);
+  return match ? match[1] : null;
+};
+
 export default function InfoDetails() {
     const { id } = useParams();
     const navigate = useNavigate();
@@ -36,6 +41,7 @@ export default function InfoDetails() {
         if (!id) return;
         fetchDetails();
         fetchStatusText();
+        // eslint-disable-next-line react-hooks/exhaustive-deps
     }, [id, page, pageSize]);
 
     useEffect(() => {
@@ -47,7 +53,6 @@ export default function InfoDetails() {
     useEffect(() => {
         if (pendingHighlight && details && details.results && details.results.length > 0) {
             const rowInPage = pendingHighlight.row % pageSize;
-            console.log("useEffect检测到pendingHighlight:", pendingHighlight, "rowInPage:", rowInPage, "记录数:", details.results.length);
             if (rowInPage < details.results.length) {
                 setHighlightCell({ row: rowInPage, col: pendingHighlight.col });
                 setTimeout(() => {
@@ -414,8 +419,17 @@ export default function InfoDetails() {
             }
 
             if (newActivate && jumpEnabled) {
+                let highlightCol = scanItem.col;
+                const colName = parseColumnName(scanItem.message);
+                if (colName && headers && headers.length > 0) {
+                    const indexInHeaders = headers.indexOf(colName);
+                    if (indexInHeaders !== -1) {
+                        highlightCol = indexInHeaders;
+                    }
+                }
+                setPendingHighlight({ row: scanItem.row, col: highlightCol });
+
                 const targetPage = Math.floor(scanItem.row / pageSize) + 1;
-                setPendingHighlight({ row: scanItem.row, col: scanItem.col });
                 if (targetPage !== page) {
                     setPage(targetPage);
                     setTimeout(() => {
