@@ -4,6 +4,7 @@ from sklearn.ensemble import IsolationForest
 from sklearn.experimental import enable_iterative_imputer
 from sklearn.impute import IterativeImputer
 from sklearn.feature_selection import VarianceThreshold
+from statsmodels.stats.outliers_influence import variance_inflation_factor
 from decimal import Decimal
 from api.models import TaskProgress
 
@@ -17,7 +18,7 @@ def clean_data(df: pd.DataFrame, task_progress: TaskProgress) -> pd.DataFrame:
         Raw input data to be processed
     numeric_threshold : float (default=0.1)
         Threshold ratio for high-cardinality numeric column detection
-    max_unique_count : int (default=100)
+    max_unique_count : int (default=1000)
         Maximum allowed unique values for categorical columns
     contamination : float (default=0.05)
         Outlier fraction assumption for Isolation Forest
@@ -43,22 +44,25 @@ def clean_data(df: pd.DataFrame, task_progress: TaskProgress) -> pd.DataFrame:
     pd.DataFrame
         Processed and cleaned data
     """
-    numeric_threshold: float = 0.1
-    max_unique_count: int = 100
+    numeric_threshold: float = 0.99
     contamination: float = 0.05
-    max_onehot_features: int = 15
+    max_onehot_features: int = 20
     handle_dates: bool = True
     text_cleaning: bool = True
     extract_dates: bool = True
     remove_sparse: bool = True
+    remove_collinear: bool = False  # Set to True to enable
+    total_steps = 8
+    step_percent = round(100 / total_steps, 2)
 
-    def update_progress(step_message: str, progress_increment: float):
+    def update_progress(message: str, step: float):
         if task_progress:
-            task_progress.percentage += Decimal(str(progress_increment))
-            task_progress.message = step_message
+            task_progress.percentage += Decimal(str(step))
+            task_progress.message = message
             task_progress.save()
 
     df = df.copy()
+
 
     def _remove_duplicates(df: pd.DataFrame) -> pd.DataFrame:
         """Remove duplicate rows"""
@@ -169,35 +173,25 @@ def clean_data(df: pd.DataFrame, task_progress: TaskProgress) -> pd.DataFrame:
             )
         return df
 
-    def _encode_categoricals(
-        df: pd.DataFrame, 
-        max_unique_count: int,
-        numeric_threshold: float,
-        max_onehot_features: int
-    ) -> pd.DataFrame:
+    def _encode_categoricals(df: pd.DataFrame, numeric_threshold: float, max_onehot_features: int) -> pd.DataFrame:
         """Encode categorical variables with frequency or One-Hot encoding"""
-        # Select non-numeric columns
         cat_cols = df.select_dtypes(include=['object', 'category', 'bool']).columns
         
         for col in cat_cols:
             unique_count = df[col].nunique()
             total_rows = len(df)
+            unique_ratio = unique_count / total_rows
             
-            # Drop high cardinality columns
-            if unique_count > max_unique_count or unique_count / total_rows > 0.5:
+            if unique_ratio > numeric_threshold:
                 df.drop(columns=[col], inplace=True)
                 continue
             
-            # Encoding strategy
             if unique_count <= max_onehot_features:
-                # One-Hot Encoding
                 df = pd.get_dummies(df, columns=[col], drop_first=True, dtype=int)
-            elif max_onehot_features <= unique_count <= numeric_threshold:
-                # Frequency Encoding
+            else:
                 freq = (df[col].value_counts() / total_rows).to_dict()
                 df[f"{col}_freq"] = df[col].map(freq).astype(np.float32)
                 df.drop(columns=[col], inplace=True)
-        
         return df
 
     def _remove_sparse_features(df: pd.DataFrame, remove_sparse: bool) -> pd.DataFrame:
@@ -212,35 +206,67 @@ def clean_data(df: pd.DataFrame, task_progress: TaskProgress) -> pd.DataFrame:
         
         if binary_cols:
             selector = VarianceThreshold(threshold=0.05*(1-0.05))
-            binary_data = selector.fit_transform(df[binary_cols])
-            selected_cols = np.array(binary_cols)[selector.get_support()].tolist()
-            non_binary_cols = df.columns.difference(binary_cols).tolist()
-            df = pd.concat([
-                df[non_binary_cols],
-                pd.DataFrame(binary_data, columns=selected_cols)
-            ], axis=1)
-        
+            try:
+                binary_data = selector.fit_transform(df[binary_cols])
+                selected_cols = np.array(binary_cols)[selector.get_support()].tolist()
+                non_binary_cols = df.columns.difference(binary_cols).tolist()
+                df = pd.concat([
+                    df[non_binary_cols],
+                    pd.DataFrame(binary_data, columns=selected_cols)
+                ], axis=1)
+            except ValueError:
+                print("[Warning]")
+                return df
         return df
 
+    def _remove_collinear_features(df: pd.DataFrame, remove_collinear: bool) -> pd.DataFrame:
+        """Remove collinear features using VIF"""
+        if not remove_collinear:
+            return df
+        
+        numeric_cols = df.select_dtypes(include=['number']).columns.tolist()
+        all_cols = df.columns.tolist()
+        
+        while numeric_cols:
+            vif = [variance_inflation_factor(df[numeric_cols].values, i) 
+                   for i in range(len(numeric_cols))]
+            max_vif = max(vif)
+            
+            if max_vif < 5:
+                break
+            
+            remove_idx = vif.index(max_vif)
+            removed_col = numeric_cols.pop(remove_idx)
+            
+            if removed_col in all_cols:
+                all_cols.remove(removed_col)
+        
+        return df[all_cols]
+    
+
     df = _remove_duplicates(df)
-    update_progress("Removed duplicates", 14.3)
-    
+    update_progress("Removed duplicates", step_percent)
+
     df = _handle_missing_values(df)
-    update_progress("Handled missing values", 14.3)
-    
+    update_progress("Handled missing values", step_percent)
+
     df = _detect_outliers(df, contamination)
-    update_progress("Detected and removed outliers", 14.3)
-    
+    update_progress("Detected and removed outliers", step_percent)
+
     df = _process_dates(df, handle_dates, extract_dates)
-    update_progress("Processed dates", 14.3)
-    
+    update_progress("Processed dates", step_percent)
+
     df = _clean_text(df, text_cleaning)
-    update_progress("Cleaned text", 14.3)
-    
-    df = _encode_categoricals(df, max_unique_count, numeric_threshold, max_onehot_features)
-    update_progress("Encoded categorical features", 14.3)
-    
+    update_progress("Cleaned text", step_percent)
+
+    df = _encode_categoricals(df, numeric_threshold, max_onehot_features)
+    update_progress("Encoded categorical features", step_percent)
+
     df = _remove_sparse_features(df, remove_sparse)
-    update_progress("Removed sparse features", 14.3)
-    
+    update_progress("Removed sparse features", step_percent)
+
+    if remove_collinear:
+        df = _remove_collinear_features(df, remove_collinear)
+        update_progress("Removed collinear features", step_percent)
+
     return df
