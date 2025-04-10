@@ -1,7 +1,7 @@
 export default function Footer(){
     return(
-        <footer className="fixed left-0 bottom-0 w-full dark:text-cyan-400">
-            © 2024 Your Company. All rights reserved.
+        <footer className="w-full py-0 pt-5 text-left bg-white text-black shadow-md dark:text-cyan-400 bg-gray-900">
+            © 2024 AutoClean. All rights reserved.
         </footer>
     );
 }

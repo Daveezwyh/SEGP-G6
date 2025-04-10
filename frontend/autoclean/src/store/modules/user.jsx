@@ -30,7 +30,7 @@ const fetchLogin = (loginForm) => {
             const res = await request.post(api_token, loginForm);
             
             if (res.status === 200 && res.statusText === 'OK') {
-                dispatch(setToken(res.data.token));
+                dispatch(setToken(res.data.access));
                 return true;
             }
             return false;
@@ -41,6 +41,6 @@ const fetchLogin = (loginForm) => {
     };
 };
 
-export { fetchLogin, setToken}
+export {fetchLogin, setToken}
 
 export default userReducer

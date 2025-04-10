@@ -1,19 +1,27 @@
-const TOKENKEY = 'token_key'
+const ACCESS_TOKEN_KEY = 'access_token';
+const REFRESH_TOKEN_KEY = 'refresh_token';
 
-function setToken(token){
-    return window.localStorage.setItem(TOKENKEY, token)
+function setToken(access, refresh) {
+    console.log('Saving tokens:', access, refresh);
+    if (access) {
+        window.localStorage.setItem(ACCESS_TOKEN_KEY, access);
+    }
+    if (refresh) {
+        window.localStorage.setItem(REFRESH_TOKEN_KEY, refresh);
+    }
 }
 
-function getToken(){
-    return window.localStorage.getItem(TOKENKEY)
+function getToken() {
+    return window.localStorage.getItem(ACCESS_TOKEN_KEY);
 }
 
-function removeToken(){
-    return window.localStorage.removeItem(TOKENKEY)
+function getRefreshToken() {
+    return window.localStorage.getItem(REFRESH_TOKEN_KEY);
 }
 
-export {
-    setToken,
-    getToken,
-    removeToken
+function removeToken() {
+    window.localStorage.removeItem(ACCESS_TOKEN_KEY);
+    window.localStorage.removeItem(REFRESH_TOKEN_KEY);
 }
+
+export { setToken, getToken, getRefreshToken, removeToken };

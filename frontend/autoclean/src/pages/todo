@@ -1,0 +1,20 @@
+interface
+
+- add scan result with endpoints
+- make sure the pop up tab page no error (pop up after pressing clean button)
+- design multiple selection for cleaning
+- make the information page design nicer
+- report
+
+change the data structure of the import data
+
+need to be changed
+-------
+- when uploading file, in detect inspect whether the status is in error or processing
+- if it is error then stop the file from uploading ( the inspect stop running ) and print the error message out
+--------
+- add active and nonactive status
+--------
+- enhance the info page and scanresult(infodetail)
+--------
+- make those details into lists
