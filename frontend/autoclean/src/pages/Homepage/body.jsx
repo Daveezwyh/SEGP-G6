@@ -22,7 +22,7 @@ export default function Body() {
       acceptedFiles: ".xlsx,.xls,.csv",
       maxFiles: 5,
       autoProcessQueue: false,
-      dictDefaultMessage: "Drag and drop your Excel file here, or click to browse",
+      dictDefaultMessage: "Drag and drop your Excel & CSV file here, or click to browse",
       previewTemplate: `
             <div class="dz-preview dz-file-preview relative p-2 flex flex-col items-center">
                 <div

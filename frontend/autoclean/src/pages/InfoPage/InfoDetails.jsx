@@ -758,14 +758,6 @@ export default function InfoDetails() {
                                     <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 text-sm ">
                                       <div>
                                         <span className="font-semibold text-gray-600 dark:text-gray-300">
-                                          ID:
-                                        </span>{" "}
-                                        <span className="text-gray-800 dark:text-white">
-                                          {action.id}
-                                        </span>
-                                      </div>
-                                      <div>
-                                        <span className="font-semibold text-gray-600 dark:text-gray-300">
                                           Title:
                                         </span>{" "}
                                         <span className="text-gray-800 dark:text-white">
@@ -779,12 +771,6 @@ export default function InfoDetails() {
                                         <span className="text-gray-800 dark:text-white">
                                           {action.description}
                                         </span>
-                                      </div>
-                                      <div>
-                                        <span className="font-semibold text-gray-600 dark:text-gray-300">
-                                          Cleaner:
-                                        </span>{" "}
-                                        <span className="text-blue-500">{action.cleaner}</span>
                                       </div>
                                       <div className="flex justify-between items-center sm:justify-start sm:gap-3">
                                         <span className="font-semibold text-gray-600 dark:text-gray-300">
