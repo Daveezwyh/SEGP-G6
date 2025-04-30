@@ -87,7 +87,7 @@ Since the frontend is not included in the Docker setup, follow these steps to se
 
 1. Navigate to the frontend directory:
    ```bash
-   cd frontend
+   cd frontend/autoclean
    ```
 
 2. Install dependencies:
@@ -97,11 +97,11 @@ Since the frontend is not included in the Docker setup, follow these steps to se
 
 3. Set up environment variables:
    - For development (`npm run dev`):
-     - Ensure the `.env.development` file exists in the `frontend` directory.
+     - Ensure the `.env.development` file exists in the `frontend/autoclean` directory.
      - Update `.env.development` with the backend API URL and other configurations.
 
    - For production (`npm run build`):
-     - Ensure the `.env.production` file exists in the `frontend` directory.
+     - Ensure the `.env.production` file exists in the `frontend/autoclean` directory.
      - Update `.env.production` with the backend API URL and other configurations.
 
 4. Start the development server:
@@ -136,39 +136,49 @@ If you prefer to set up the project manually, follow the steps below.
    ```
 
 2. Create a virtual environment and activate it:
-   ```bash
-   python -m venv venv
-   source venv/bin/activate  # On Windows: venv\Scripts\activate
-   ```
+   - Create the virtual environment in the `backend` directory:
+     ```bash
+     python -m venv venv
+     ```
+   - Activate the virtual environment:
+     ```bash
+     source venv/bin/activate  # On Windows: venv\Scripts\activate
+     ```
 
 3. Install dependencies:
+   - Ensure you are in the `backend` directory where the `requirements.txt` file is located:
+     ```bash
+     pip install -r requirements.txt
+     ```
+
+4. Navigate to the Django project directory:
    ```bash
-   pip install -r requirements.txt
+   cd autoclean
    ```
 
-4. Set up environment variables:
+5. Set up environment variables:
    - Copy `.env.example` to `.env`:
      ```bash
-     cp autoclean/.env.example autoclean/.env
+     cp .env.example .env
      ```
    - Update the `.env` file with your database and other configurations.
 
-5. Generate migration files:
+6. Generate migration files:
    ```bash
    python manage.py makemigrations
    ```
 
-6. Apply database migrations:
+7. Apply database migrations:
    ```bash
    python manage.py migrate
    ```
 
-7. Start the backend server:
+8. Start the backend server:
    ```bash
    python manage.py runserver
    ```
 
-8. Start Celery workers for background tasks:
+9. Start Celery workers for background tasks:
    ```bash
    celery -A autoclean worker --loglevel=info
    ```
