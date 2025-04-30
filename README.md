@@ -180,7 +180,7 @@ If you prefer to set up the project manually, follow the steps below.
 
 9. Start Celery workers for background tasks:
    ```bash
-   celery -A autoclean worker --loglevel=info
+   celery -A autoclean worker -B -l info
    ```
 
 ---
